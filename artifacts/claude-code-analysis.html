@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Code v2.1.88 심층 분석 — 오케스트레이션 에이전트 적용 관점</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --surface-2: #eef2f7;
+      --surface-3: #e7ecf3;
+      --text: #16202b;
+      --muted: #5d6b7c;
+      --faint: #8593a3;
+      --border: #d6dde7;
+      --border-2: #c3cdda;
+      --accent: #0f766e;
+      --accent-ink: #0b574f;
+      --warn: #b45309;
+      --danger: #b42318;
+      --ok: #147a3d;
+      --code-bg: #0f1722;
+      --code-fg: #dce6f1;
+      --shadow: 0 10px 28px rgba(20, 30, 45, 0.07);
+      --shadow-lg: 0 18px 48px rgba(20, 30, 45, 0.12);
+      /* category accents */
+      --cA: #2563eb; --cB: #7c3aed; --cC: #b42318; --cD: #be185d;
+      --cE: #0f766e; --cF: #b45309; --cG: #4f46e5; --cH: #0369a1;
+      --cI: #0d9488; --cJ: #6d28d9; --cK: #c2410c; --cL: #475569;
+      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+    .shell { width: min(1240px, calc(100% - 36px)); margin: 0 auto; }
+    a { color: var(--accent-ink); }
+
+    /* ---------- header ---------- */
+    header.top { padding: 34px 0 22px; background: linear-gradient(180deg, #ffffff, #f3f6fa); border-bottom: 1px solid var(--border); }
+    .eyebrow { margin: 0 0 10px; color: var(--accent); font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 1040px; font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1.04; letter-spacing: -0.01em; }
+    .lede { max-width: 920px; margin: 14px 0 0; color: var(--muted); font-size: 1.06rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+    .stat b { font-size: 1.18rem; letter-spacing: -0.01em; }
+    .stat span { font-size: .76rem; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+
+    /* ---------- nav ---------- */
+    nav.toc { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); background: rgba(247,249,251,.93); backdrop-filter: blur(10px); }
+    nav.toc .shell { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; scrollbar-width: thin; }
+    nav.toc a { flex: 0 0 auto; border: 1px solid var(--border); border-radius: 999px; padding: 7px 13px; color: var(--text); text-decoration: none; font-size: .87rem; font-weight: 600; background: var(--surface); white-space: nowrap; }
+    nav.toc a:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+    main { padding: 26px 0 64px; }
+    section { margin: 0 0 22px; padding: 26px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); scroll-margin-top: 64px; }
+    section > h2 { margin: 0 0 6px; font-size: 1.5rem; letter-spacing: -0.01em; display: flex; align-items: baseline; gap: 10px; }
+    section > h2 .n { font-size: .9rem; color: var(--faint); font-weight: 700; }
+    section > .sub { margin: 0 0 18px; color: var(--muted); font-size: .96rem; max-width: 880px; }
+    h3 { margin: 0 0 8px; font-size: 1.05rem; letter-spacing: -0.005em; }
+
+    .grid { display: grid; gap: 14px; }
+    .g4 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .g2 { grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+
+    .card { min-width: 0; padding: 16px 16px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .card.kf { border-top: 3px solid var(--accent); }
+    .card h3 { display: flex; align-items: center; gap: 8px; }
+    .card p { margin: 6px 0 0; color: var(--muted); font-size: .92rem; }
+
+    .callout { border-left: 4px solid var(--accent); padding: 14px 16px; background: var(--surface-2); border-radius: 0 10px 10px 0; }
+    .callout.warn { border-color: var(--warn); }
+    .callout b { color: var(--text); }
+
+    code.ref { font-size: .8rem; padding: 1px 6px; border-radius: 6px; background: var(--surface-3); border: 1px solid var(--border); color: var(--accent-ink); white-space: nowrap; }
+    .reflist { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 800; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; color: #fff; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--border-2); background: var(--surface-2); color: var(--muted); }
+    .pill.orch { border-color: #b9842b; background: #fff5e2; color: #8a5a09; }
+    .star { color: var(--warn); font-weight: 800; }
+
+    /* ---------- architecture diagram ---------- */
+    .arch { display: flex; flex-direction: column; gap: 0; }
+    .layer { position: relative; border: 1px solid var(--border-2); border-radius: 12px; padding: 14px 16px; background: var(--surface-2); margin-bottom: 26px; }
+    .layer:last-child { margin-bottom: 0; }
+    .layer::after { content: "▼"; position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); color: var(--faint); font-size: .85rem; }
+    .layer:last-child::after { content: ""; }
+    .layer .lt { font-size: .76rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+    .layer .row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chiplet { font-size: .82rem; padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+    .chiplet b { font-weight: 700; }
+    .chiplet .m { color: var(--faint); font-size: .76rem; }
+    .layer.loop { background: #eef6f5; border-color: #aed3ce; }
+
+    /* ---------- toolbar / filters ---------- */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 16px; }
+    .toolbar input[type="search"] { flex: 1 1 220px; min-height: 40px; padding: 8px 12px; border: 1px solid var(--border-2); border-radius: 10px; background: var(--surface); }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { cursor: pointer; user-select: none; font-size: .82rem; font-weight: 700; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border-2); background: var(--surface); color: var(--muted); }
+    .chip[aria-pressed="true"] { background: var(--text); color: #fff; border-color: var(--text); }
+    .chip.cat[aria-pressed="true"] { background: var(--ccol, var(--text)); border-color: var(--ccol, var(--text)); }
+    .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 700; color: var(--muted); cursor: pointer; }
+    .count { font-size: .82rem; color: var(--faint); margin-left: auto; }
+
+    button { min-height: 38px; border: 1px solid var(--border-2); border-radius: 9px; padding: 8px 13px; color: var(--text); background: var(--surface); cursor: pointer; font: inherit; font-weight: 600; }
+    button:hover { border-color: var(--accent); }
+    button.primary { border-color: var(--accent); color: #fff; background: var(--accent); }
+    button.primary:hover { background: var(--accent-ink); }
+
+    /* feature cards */
+    #featGrid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; }
+    .feat { border: 1px solid var(--border); border-left: 4px solid var(--ccol, var(--accent)); border-radius: 10px; padding: 14px 15px; background: var(--surface); }
+    .feat .fh { display: flex; align-items: flex-start; gap: 8px; justify-content: space-between; }
+    .feat .ft { font-weight: 700; font-size: .98rem; }
+    .feat .fid { font-family: ui-monospace, monospace; font-size: .72rem; font-weight: 800; color: #fff; background: var(--ccol, var(--accent)); padding: 1px 7px; border-radius: 6px; flex: 0 0 auto; }
+    .feat p { margin: 8px 0 0; font-size: .9rem; color: var(--muted); }
+    .feat .why { margin-top: 8px; font-size: .86rem; color: var(--accent-ink); }
+    .feat.hide { display: none; }
+
+    /* patterns / standout */
+    .ol-clean { margin: 0; padding-left: 0; list-style: none; counter-reset: p; }
+    .ol-clean li { position: relative; padding: 10px 0 10px 40px; border-bottom: 1px dashed var(--border); }
+    .ol-clean li:last-child { border-bottom: 0; }
+    .ol-clean li::before { counter-increment: p; content: counter(p); position: absolute; left: 0; top: 9px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-3); color: var(--accent-ink); font-weight: 800; font-size: .82rem; }
+    .ol-clean b { font-weight: 700; }
+    .standout li { padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: .9rem; }
+    .standout li:last-child { border-bottom: 0; }
+    .standout b { color: var(--text); }
+
+    /* borrow table */
+    .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    thead th { position: sticky; top: 0; background: var(--surface-2); color: var(--muted); font-size: .8rem; font-weight: 800; letter-spacing: .02em; z-index: 1; }
+    tbody tr:hover { background: var(--surface-2); }
+    tbody tr.orow { background: #fffaf0; }
+    tbody tr.orow:hover { background: #fff3da; }
+    td .rank { font-weight: 800; font-size: 1.05rem; }
+    td .pat { font-weight: 700; }
+    td .cau { color: var(--muted); font-size: .85rem; }
+    .diff { font-size: .74rem; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+    .d-low { background: #e6f4ec; color: var(--ok); }
+    .d-mid { background: #fdf1dd; color: var(--warn); }
+    .d-high { background: #fae9e7; color: var(--danger); }
+    tr.thide { display: none; }
+
+    details { border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; margin-bottom: 10px; background: var(--surface); }
+    details[open] { background: var(--surface-2); }
+    summary { cursor: pointer; font-weight: 700; padding: 12px 0; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "▸ "; color: var(--faint); }
+    details[open] summary::before { content: "▾ "; }
+    details .body { padding: 0 0 14px; font-size: .9rem; color: var(--muted); }
+    details .body code.ref { color: var(--accent-ink); }
+
+    .copywrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+    #copyStatus, #copyStatus2 { font-size: .85rem; color: var(--ok); font-weight: 700; }
+
+    footer.bot { padding: 22px 0 8px; color: var(--faint); font-size: .82rem; }
+    .src { font-size: .8rem; color: var(--faint); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 640px) {
+      .shell { width: calc(100% - 22px); }
+      section { padding: 18px; }
+      .stat b { font-size: 1.05rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="shell">
+      <p class="eyebrow">Source-code Deep Analysis · 적용 가능성 검토</p>
+      <h1>Claude Code v2.1.88 — 프로덕션 에이전트는 어떻게 만들어졌나</h1>
+      <p class="lede">추출된 비번들 TypeScript 소스를 15개 서브시스템으로 병렬 분석한 결과. <b>TS/Node 범용 오케스트레이션 에이전트</b>를 만드는 엔지니어가 “무엇을 그대로 차용할 수 있는가”에 초점을 맞췄다. 모든 주장은 <code class="ref">file:line</code>으로 근거화됨.</p>
+      <div class="stats">
+        <div class="stat"><b>18</b><span>분석 에이전트</span></div>
+        <div class="stat"><b>2.23M</b><span>토큰</span></div>
+        <div class="stat"><b>712</b><span>도구 호출</span></div>
+        <div class="stat"><b>15 → 12 ✓</b><span>서브시스템(3 보강)</span></div>
+        <div class="stat"><b>~50</b><span>기능 항목</span></div>
+        <div class="stat"><b>14</b><span>차용 패턴</span></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="섹션">
+    <div class="shell">
+      <a href="#summary">핵심 요약</a>
+      <a href="#arch">아키텍처</a>
+      <a href="#catalog">기능 카탈로그</a>
+      <a href="#patterns">횡단 패턴</a>
+      <a href="#borrow">차용 우선순위</a>
+      <a href="#caveats">주의·한계</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <!-- ============ SUMMARY ============ -->
+    <section id="summary" aria-labelledby="summary-t">
+      <h2 id="summary-t">핵심 요약 <span class="n">— 설계의 척추</span></h2>
+      <p class="sub">전체 아키텍처는 <b>하나의 async-generator 에이전트 루프</b>를 중심으로 동심원처럼 층이 쌓인 구조다. 모든 출력(텍스트/툴 결과/시스템 노트)이 단일 정렬 채널로 yield되어 위로 흐르고, REPL/SDK는 이를 <code class="ref">for await</code>로 pull하면서 backpressure·취소·증분 렌더를 공짜로 얻는다.</p>
+      <div class="grid g4">
+        <article class="card kf">
+          <h3>① 단일 generator 턴 루프</h3>
+          <p><code class="ref">query.ts</code> <code class="ref">queryLoop()</code>는 de-recursed <code class="ref">while(true)</code>. 유일한 탈출은 tagged <b>Terminal</b> reason의 <code class="ref">return</code>. continue 신호는 <code class="ref">stop_reason</code>이 아니라 <b>tool_use 블록 관측 여부</b>.</p>
+        </article>
+        <article class="card kf">
+          <h3>② <code class="ref">&lt;system-reminder&gt;</code> 메타 채널</h3>
+          <p>todo·메모리·compaction·skill listing·훅 context·queued command 등 <b>모든 out-of-band 조종</b>을 저권위 isMeta user 메시지로 주입. 시스템 프롬프트는 오염되지 않음.</p>
+        </article>
+        <article class="card kf">
+          <h3>③ prompt-cache 바이트 안정성</h3>
+          <p>캐시되는 바이트를 절대 churn하지 않음: tool base 세션 캐시 후 per-request overlay, static/dynamic boundary sentinel, <b>mutate-don't-replace</b>, fork prefix 바이트 동일.</p>
+        </article>
+        <article class="card kf">
+          <h3>④ fail-closed 권한 경계</h3>
+          <p><code class="ref">permissions.ts</code> 고정 순번 <b>deny &gt; ask &gt; allow</b>. explicit deny·민감자원 ask가 <code class="ref">bypassPermissions</code>보다 <b>앞서</b> 평가 → safe-by-construction.</p>
+        </article>
+      </div>
+      <div class="callout" style="margin-top:16px">
+        <b>오케스트레이션 에이전트라면 특히</b> — 루프 골격(<code class="ref">A1·A2·A4</code>) → 서브에이전트 dispatch/격리/결과채널(<code class="ref">D1·D2·D3·D5</code>) → 컨텍스트 생존(<code class="ref">E3·E5·H2</code>) → 병렬성(<code class="ref">B3</code>) → 확장성 통합 모델(<code class="ref">F1·F4</code>) 순으로 보면 된다. 아래 카탈로그에서 <span class="pill orch">⚙ 오케스트레이션</span> 토글로 이 항목들만 추릴 수 있다.
+      </div>
+    </section>
+
+    <!-- ============ ARCHITECTURE ============ -->
+    <section id="arch" aria-labelledby="arch-t">
+      <h2 id="arch-t">핵심 아키텍처 <span class="n">— Entry → Loop → Tools/State/Services</span></h2>
+      <p class="sub">진입(REPL/headless/remote)이 per-conversation <b>QueryEngine</b>을 만들고, 그것이 <code class="ref">query()</code> 제너레이터를 소비한다. 루프는 매 턴 컨텍스트 축소 파이프라인을 돌린 뒤 모델을 스트리밍하고, tool_use를 감지하면 도구를 실행해 결과를 다음 턴 입력으로 되먹인다.</p>
+      <div class="arch">
+        <div class="layer">
+          <div class="lt">Entrypoints</div>
+          <div class="row">
+            <span class="chiplet"><b>REPL</b> (Ink/React) <span class="m">screens/REPL.tsx:2793</span></span>
+            <span class="chiplet"><b>headless SDK</b> ask() <span class="m">QueryEngine.ts:1186</span></span>
+            <span class="chiplet"><b>Remote bridge</b> (claude.ai) <span class="m">bridge/*</span></span>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lt">QueryEngine — per-conversation owner</div>
+          <div class="row">
+            <span class="chiplet">시스템프롬프트 조립 <span class="m">fetchSystemPromptParts</span></span>
+            <span class="chiplet">슬래시/첨부 확장 <span class="m">processUserInput</span></span>
+            <span class="chiplet">transcript 영속화 <span class="m">recordTranscript</span></span>
+            <span class="chiplet">usage·budget·SDK result 변환 <span class="m">QueryEngine.ts:209</span></span>
+          </div>
+        </div>
+        <div class="layer loop">
+          <div class="lt">Agent Loop — queryLoop() = while(true) async generator</div>
+          <div class="row">
+            <span class="chiplet">컨텍스트 축소 <span class="m">snip→microcompact→collapse→autocompact</span></span>
+            <span class="chiplet">모델 스트리밍 <span class="m">services/api/claude.ts (SSE→블록별)</span></span>
+            <span class="chiplet">retry/backoff <span class="m">withRetry.ts (529→fallback)</span></span>
+            <span class="chiplet">도구 실행 <span class="m">toolOrchestration / StreamingToolExecutor</span></span>
+            <span class="chiplet">탈출 <span class="m">return Terminal reason</span></span>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lt">Tools &nbsp;·&nbsp; Permissions / Sandbox</div>
+          <div class="row">
+            <span class="chiplet">단일 Tool 계약 + fail-closed buildTool <span class="m">Tool.ts</span></span>
+            <span class="chiplet">레지스트리 5계층 게이팅 <span class="m">tools.ts</span></span>
+            <span class="chiplet">deny&gt;ask&gt;allow <span class="m">permissions.ts:1158</span></span>
+            <span class="chiplet">Bash/경로 anti-bypass <span class="m">bashPermissions.ts · filesystem.ts</span></span>
+            <span class="chiplet">OS 샌드박스 <span class="m">sandbox-adapter.ts (bwrap/Seatbelt)</span></span>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lt">Context / State</div>
+          <div class="row">
+            <span class="chiplet">usage 계측 <span class="m">tokens.ts:226</span></span>
+            <span class="chiplet">3단 compaction <span class="m">compact/* · microCompact.ts</span></span>
+            <span class="chiplet">계층 메모리 <span class="m">claudemd.ts</span></span>
+            <span class="chiplet">append-only JSONL DAG <span class="m">sessionStorage.ts</span></span>
+            <span class="chiplet">파일 체크포인트 <span class="m">fileHistory.ts</span></span>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lt">Extensibility / Services</div>
+          <div class="row">
+            <span class="chiplet">Skills 2단 disclosure <span class="m">skills/*</span></span>
+            <span class="chiplet">통합 Command 모델 <span class="m">commands.ts</span></span>
+            <span class="chiplet">라이프사이클 훅 <span class="m">utils/hooks.ts</span></span>
+            <span class="chiplet">MCP + IDE 채널 <span class="m">services/mcp/*</span></span>
+            <span class="chiplet">managed settings · killswitch <span class="m">remoteManagedSettings/*</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURE CATALOG ============ -->
+    <section id="catalog" aria-labelledby="catalog-t">
+      <h2 id="catalog-t">주요 기능 카탈로그 <span class="n">— 카테고리 A–L</span></h2>
+      <p class="sub">검색·카테고리 필터로 추리고, <span class="pill orch">⚙ 오케스트레이션</span> 토글로 범용 오케스트레이션 에이전트에 가장 관련 깊은 항목만 볼 수 있다. 각 항목의 코드 참조는 verbatim 검증된 위치다.</p>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="기능 검색 (예: compaction, abort, tool_result, 권한...)" aria-label="기능 검색">
+        <label class="toggle"><input type="checkbox" id="orchOnly"> <span class="pill orch">⚙ 오케스트레이션 관련만</span></label>
+      </div>
+      <div class="chips" id="catChips" role="group" aria-label="카테고리 필터" style="margin-bottom:14px"></div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <span class="count" id="featCount"></span>
+      </div>
+      <div class="grid" id="featGrid"></div>
+    </section>
+
+    <!-- ============ PATTERNS ============ -->
+    <section id="patterns" aria-labelledby="patterns-t">
+      <h2 id="patterns-t">두드러진 엔지니어링 패턴 <span class="n">— 횡단 + standout</span></h2>
+      <div class="grid g2">
+        <div>
+          <h3>횡단 패턴 (10)</h3>
+          <ol class="ol-clean" id="crossList"></ol>
+        </div>
+        <div>
+          <h3>Standout 결정 (구체 메커니즘 + 참조)</h3>
+          <ul class="standout" id="standoutList" style="margin:0;padding:0;list-style:none"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BORROW LIST ============ -->
+    <section id="borrow" aria-labelledby="borrow-t">
+      <h2 id="borrow-t">에이전트 개발자가 빌려갈 만한 패턴 <span class="n">— 우선순위 (value-to-effort)</span></h2>
+      <p class="sub">당신의 스택(TS/Node)은 Claude Code와 동일하므로 대부분 코드 수준에서 직접 차용 가능하다. 난이도로 필터하고, <b>오케스트레이션 우선</b> 행은 강조 표시했다. 하단 버튼으로 체크리스트(Markdown)를 복사해 바로 작업 큐에 넣을 수 있다.</p>
+      <div class="toolbar">
+        <div class="chips" id="diffChips" role="group" aria-label="난이도 필터">
+          <button class="chip" data-diff="all" aria-pressed="true">전체</button>
+          <button class="chip" data-diff="low" aria-pressed="false">난이도 낮음</button>
+          <button class="chip" data-diff="mid" aria-pressed="false">중간</button>
+          <button class="chip" data-diff="high" aria-pressed="false">높음</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="orchBorrow"> 오케스트레이션 우선만</label>
+        <span class="count" id="borrowCount"></span>
+      </div>
+      <div class="tbl-wrap">
+        <table id="borrowTbl">
+          <thead>
+            <tr>
+              <th style="width:42px">#</th>
+              <th style="min-width:200px">패턴 / 무엇을 가져갈지</th>
+              <th style="min-width:240px">이식 주의점</th>
+              <th style="width:88px">난이도</th>
+              <th style="width:120px">비고</th>
+            </tr>
+          </thead>
+          <tbody id="borrowBody"></tbody>
+        </table>
+      </div>
+      <div class="copywrap">
+        <button class="primary" id="copyTasks" type="button">현재 보이는 항목을 ✓ 체크리스트(Markdown)로 복사</button>
+        <span id="copyStatus" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <!-- ============ CAVEATS ============ -->
+    <section id="caveats" aria-labelledby="caveats-t">
+      <h2 id="caveats-t">주의 / 한계 <span class="n">— 검증 상태</span></h2>
+      <div class="grid g2" style="margin-bottom:6px">
+        <div class="callout warn"><b>역컴파일 소스.</b> 일부 파일은 React-Compiler 출력(<code class="ref">_c(6)</code> 캐시 슬롯, base64 sourcemap). 변수명 minify 사례 존재(예: <code class="ref">isConcurrencySafe</code> → <code class="ref">ln</code>). 줄 번호는 대체로 일치하나 미세 차이 가능.</div>
+        <div class="callout warn"><b>feature-gated / 빌트인 전용.</b> 상당수가 <code class="ref">USER_TYPE==='ant'</code> 또는 <code class="ref">feature()</code> 매크로(SleepTool·cron·swarm·coordinator·fork-subagent) 뒤 — 공개 빌드에선 DCE 제거. <b>외부 빌드 동작 ≠ 소스 모든 분기.</b></div>
+      </div>
+      <details>
+        <summary>검증됨 — 소스 직접 확인</summary>
+        <div class="body">skills budget(1%·250자·bundled never-truncate, <code class="ref">SkillTool/prompt.ts:20-29</code>), fileHistory <code class="ref">sha256[:16]@vN</code> (<code class="ref">fileHistory.ts:725-731</code>), todo cadence 10/10(<code class="ref">attachments.ts:254-257</code>), MCP 트랜스포트·scope·XAA(<code class="ref">mcp/types.ts</code>), IDE=MCP 채널(<code class="ref">useDiffInIDE.ts:22-28</code>), WebFetch redirect-host·15분 캐시·copyright 가드, ExitPlanModeV2 semantic 권한(<code class="ref">ExitPlanModeV2Tool.ts:64-70</code>), 그리고 retry(500ms/32s/jitter/529=3)·autocompact(3/20k/13k)·TOOL_DEFAULTS·deny&gt;ask&gt;allow 순서·tombstone(50MB/64KB)·global cache scope·동시성 cap 10 상수 verbatim 일치.</div>
+      </details>
+      <details>
+        <summary>부분 검증 / 채택 전 재확인 권장</summary>
+        <div class="body">“FORK_AGENT가 <code class="ref">maxOutputTokens</code> 설정 금지(thinking budget clamp → 캐시 키 깨짐)”는 채택 시 <code class="ref">forkSubagent.ts</code>/<code class="ref">forkedAgent.ts</code> 재확인 권장. retry의 “fallback 모델 swap·signature strip·turn replay”는 <code class="ref">withRetry.ts</code>가 아니라 <code class="ref">query.ts:893-953</code>에서 발생(원 findings의 파일 귀속이 느슨했음).</div>
+      </details>
+      <details>
+        <summary>이번 분석이 얕게 다룬 영역</summary>
+        <div class="body">vim 편집 모드(<code class="ref">src/vim/</code>), keybindings(<code class="ref">src/keybindings/</code>), voice, cost/model-selection UX(<code class="ref">cost-tracker</code>), NotebookEdit·PowerShell·LSP 도구 내부, AskUserQuestion/Brief/SyntheticOutput 세부 — 카탈로그 항목만 두고 깊이 파지 않음. MCP/IDE 보강은 헤더·타입·핵심 훅 레벨까지만 검증.</div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="bot">
+    <div class="shell">
+      <p class="src">출처: 추출된 <code class="ref">@anthropic-ai/claude-code</code> v2.1.88 비번들 TypeScript 소스 (<code class="ref">src/</code>). 분석: 15-subsystem 병렬 워크플로우 → 종합 → 적대적 비평 → 최종화. 원본 Markdown 보고서: <code class="ref">artifacts/claude-code-analysis-report.md</code>.</p>
+      <p class="src">이 문서는 기술 연구·학습 목적의 분석이며, 코드 저작권은 Anthropic에 있다.</p>
+    </div>
+  </footer>
+
+  <script>
+  // ---------------------------------------------------------------------------
+  // DATA
+  // ---------------------------------------------------------------------------
+  const CATS = {
+    A: {name: "Agent Loop / Query Engine", col: "var(--cA)"},
+    B: {name: "Tools", col: "var(--cB)"},
+    C: {name: "Permissions / Sandbox", col: "var(--cC)"},
+    D: {name: "Sub-agents / Orchestration", col: "var(--cD)"},
+    E: {name: "Context / Compaction / Memory", col: "var(--cE)"},
+    F: {name: "Skills / Commands / Plugins", col: "var(--cF)"},
+    G: {name: "Hooks (lifecycle)", col: "var(--cG)"},
+    H: {name: "System Prompt / Prompt Eng.", col: "var(--cH)"},
+    I: {name: "MCP / IDE / Web", col: "var(--cI)"},
+    J: {name: "State / Sessions / Persistence", col: "var(--cJ)"},
+    K: {name: "Interaction model", col: "var(--cK)"},
+    L: {name: "Remote / Killswitches", col: "var(--cL)"}
+  };
+
+  const FEATURES = [
+    {id:"A1", c:"A", orch:1, t:"tagged Terminal/Continue union 턴 루프", w:"de-recursed while(true) 제너레이터가 단일 가변 State를 운반. 매 iteration이 stream→tool_use 감지→tool 실행→[messages,…assistant,…toolResults]로 State 재구성. 탈출은 return {reason}뿐.", f:["query.ts:241","query.ts:307","query.ts:1357","query.ts:1715-1727","query/deps.ts"], why:"모든 exit/continue가 machine-readable·testable. 복구 코드가 transition.reason 검사로 무한루프 방지."},
+    {id:"A2", c:"A", orch:1, t:"블록당 1메시지 SSE 스트리밍 + message_delta back-patch", w:"raw SSE(O(n²) 회피)를 순회, content_block_stop마다 그 블록 하나의 완전한 AssistantMessage를 yield. message_delta가 뒤에 와서 진짜 stop_reason/usage를 마지막 메시지에 직접 mutate로 back-patch.", f:["claude.ts:1940","claude.ts:2192-2211","claude.ts:2242-2248"], why:"끝에만 도착하는 권위 있는 stop_reason/usage 회수. 'mutate-don't-replace'(lazy transcript queue가 live ref 보유)."},
+    {id:"A3", c:"A", orch:0, t:"지수 backoff retry + 529 fallback 모델 escalation", w:"backoff 500ms·2^n(cap 32s)+25% jitter, server retry-after 존중, 401/403시 client refresh, 반복 529 → FallbackTriggeredError.", f:["withRetry.ts:170","withRetry.ts:316-360","query.ts:893-953"], why:"retry를 generator로 만들어 'retrying in Ns' 상태를 렌더링과 분리해 yield."},
+    {id:"A4", c:"A", orch:1, t:"완전한 정지 조건 매트릭스", w:"natural / max_turns / maxBudgetUsd / user abort / Stop-hook veto / structured-output cap / token-budget early-stop을 각각 별개 result subtype으로.", f:["query.ts:1262-1357","QueryEngine.ts:842-873","query/stopHooks.ts","query/tokenBudget.ts"], why:"오케스트레이터가 '왜 멈췄나'를 분기 처리할 수 있는 단일 신호원."},
+    {id:"A5", c:"A", orch:0, t:"루프 내 컨텍스트-한계 복구(withhold-then-recover)", w:"mid-stream 413/max-output 에러를 소비자에게 숨기고 collapse-drain → reactiveCompact → max_tokens escalation(8k→64k) → 'mid-thought 재개' 주입 순으로 같은 턴 재발행. 실패 시에만 표면화.", f:["query.ts:788-825","query.ts:1062-1183"], why:"transient 컨텍스트 에러가 사용자에게 보이지 않게 자가 치유."},
+
+    {id:"B1", c:"B", orch:0, t:"단일 Tool 계약 + fail-closed buildTool()", w:"모든 capability가 ~40메서드 Tool 계약을 만족하는 데이터 객체. TOOL_DEFAULTS는 비관적(isReadOnly→false, isConcurrencySafe→false)이되 노출/허용은 낙관적(isEnabled→true).", f:["Tool.ts:757-792","Tool.ts:362-695"], why:"새 도구는 ~6개만 선언. 누락 override가 mutating 도구를 조용히 병렬화하지 못함."},
+    {id:"B2", c:"B", orch:0, t:"cache-stable Zod→API 스키마 직렬화", w:"WeakMap 캐시 native toJSONSchema, base를 세션 캐시(tool명 키), per-request 필드(defer_loading/cache_control)만 fresh copy에 overlay.", f:["utils/api.ts:119-266","utils/zodToJsonSchema.ts:12-23"], why:"도구 직렬화는 턴당 60-250회 hot path. 바이트 churn이 서버측 prompt cache 무효화."},
+    {id:"B3", c:"B", orch:1, t:"read-only vs mutating 동시성 배칭", w:"tool당 isConcurrencySafe(input) 술어, 연속 안전 호출을 한 병렬 배치로(cap 10), 비안전은 단독 직렬.", f:["toolOrchestration.ts:91-116","BashTool.tsx:434"], why:"모델 인지 없이 Read/Grep 버스트 병렬화. 병렬 서브에이전트가 이로부터 공짜 파생."},
+    {id:"B4", c:"B", orch:1, t:"deferred 도구 스키마 + ToolSearch", w:"shouldDefer+searchHint만 모델에 보내고(defer_loading), 모델이 ToolSearch로 tool_reference를 pull. 미로딩 호출 시 'ToolSearch select:X first' self-healing 힌트.", f:["ToolSearchTool.ts:186-302","claude.ts:1154-1167"], why:"도구 수백 개를 컨텍스트 폭증 없이 노출 — 대형 도구 카탈로그의 핵심."},
+    {id:"B5", c:"B", orch:0, t:"대용량 tool-result 디스크 영속화", w:"tool당 maxResultSizeChars, 초과분은 tool_use_id 키로 멱등 기록(wx), <persisted-output> preview+경로로 대체. Read는 Infinity로 opt-out.", f:["toolResultStorage.ts:137-199","Tool.ts:457-466"], why:"거대 출력이 컨텍스트를 잡아먹지 않게 하면서 참조는 보존."},
+    {id:"B6", c:"B", orch:0, t:"5계층 도구 레지스트리 게이팅", w:"build-time feature() 매크로(DCE) / USER_TYPE==='ant' / env / runtime flag / permission deny-rule을 하나의 source-of-truth 배열로 collapse.", f:["tools.ts:193-251","constants/tools.ts"], why:"기능 노출을 단일 지점에서 일관 제어."},
+
+    {id:"C1", c:"C", orch:1, t:"deny>ask>allow 순서 파이프라인(bypass-immune asks)", w:"우선순위가 scoring이 아니라 평가 순서로 강제. bypass는 explicit deny/sensitive-file ask를 못 넘음.", f:["permissions.ts:1158-1300","types/permissions.ts"], why:"safe-by-construction. 오케스트레이터에 권한 경계를 줄 때 그대로 차용."},
+    {id:"C2", c:"C", orch:0, t:"권한 모드 + AI auto-classifier + headless auto-deny", w:"outer wrapper가 'ask'를 변환. ant auto 모드는 안전도구 allowlist pre-screen 후 LLM classifier, denial-limit·fail-closed/open circuit breaker.", f:["permissions.ts:473","permissions.ts:600","getNextPermissionMode.ts"], why:"무인 실행에서 위험 행위를 자동 차단하는 안전망."},
+    {id:"C3", c:"C", orch:0, t:"Bash 권한 매칭 anti-bypass 가드", w:"Tool(content) DSL, 비대칭 정규화(ALLOW는 SAFE_ENV_VARS만, DENY/ASK는 모든 env var를 fixed-point까지 strip), compound-command 가드, tree-sitter AST 인젝션 게이트.", f:["bashPermissions.ts:378","bashPermissions.ts:733","bashPermissions.ts:948"], why:"allow-vs-deny 정규화 비대칭이 단일 최고 재사용 인사이트. 각 가드에 실제 CVE 주석."},
+    {id:"C4", c:"C", orch:0, t:"경로 기반 write 봉쇄 + auto-edit safety", w:"literal+symlink-resolved 양쪽 검사, case-fold, ../ 거부, dangerous 파일/디렉터리(.bashrc/.git/.claude/Windows ADS)를 unbypassable safetyCheck로 라우팅.", f:["filesystem.ts:435","filesystem.ts:537","filesystem.ts:1205-1366"], why:"classifierApprovable 플래그가 민감파일 ask와 hard bypass 시도를 구분."},
+    {id:"C5", c:"C", orch:0, t:"OS 샌드박스 = 프롬프트 auto-skip 두 번째 층", w:"sandboxable 명령이면 ask 건너뛰되 explicit deny/ask는 강제. 같은 룰 문자열을 sandbox-runtime(bubblewrap/Seatbelt) 설정으로 변환(단일 source).", f:["shouldUseSandbox.ts:130","sandbox-adapter.ts:172"], why:"권한 규칙과 샌드박스 설정이 한 진실원에서 파생."},
+
+    {id:"D1", c:"D", orch:1, t:"default-deny 컨텍스트 격리 spawn", w:"워커 tool pool을 부모와 독립적으로 자기 permissionMode로 계산. createSubagentContext가 가변 캐시는 clone하고 모든 mutation/UI 콜백은 기본 no-op, 좁은 opt-in + 별도 cleanup 사이드채널.", f:["runAgent.ts:248","forkedAgent.ts:345","AgentTool.tsx:573"], why:"서브에이전트가 부모 상태를 오염시키지 않게 하는 격리의 정석."},
+    {id:"D2", c:"D", orch:1, t:"sync/async 디스패치 + mid-flight backgrounding", w:"백그라운드 에이전트는 unlinked AbortController(메인 ESC로 안 죽음). sync 에이전트를 Promise.race(iterator.next(), backgroundSignal)로 실행하다 같은 task id로 isAsync 재개.", f:["AgentTool.tsx:567","AgentTool.tsx:686","LocalAgentTask.tsx"], why:"실행 중인 서브에이전트를 끊지 않고 백그라운드로 전환."},
+    {id:"D3", c:"D", orch:1, t:"dual 결과 채널: inline return vs <task-notification>", w:"완료된 백그라운드 에이전트가 status를 terminal로 먼저 전환(reader unblock) 후 XML <task-notification>을 부모 대화에 synthetic user turn으로 enqueue, atomic notified 플래그로 dedup.", f:["agentToolUtils.ts:276","LocalAgentTask.tsx:197"], why:"비동기 작업 완료를 메인 루프에 자연스러운 user turn으로 주입하는 패턴 — 오케스트레이션 핵심."},
+    {id:"D4", c:"D", orch:0, t:"prompt-cache-identical fork 서브에이전트", w:"FORK_AGENT가 부모의 이미 렌더된 시스템프롬프트 바이트·정확한 tool 배열·thinkingConfig 재사용, buildForkedMessages가 동일 placeholder tool_result로 마지막 텍스트만 다르게.", f:["forkSubagent.ts:60","forkedAgent.ts:399"], why:"포크 시 캐시 prefix 보존으로 비용 절감."},
+    {id:"D5", c:"D", orch:1, t:"worktree/remote 격리 + 멀티에이전트 메시", w:"변경 있는 worktree는 보존(병합용), 무변경은 teardown. SendMessage 에이전트-간 메시지, TaskCreate/Update 공유 보드, coordinator idle-claim.", f:["worktree.ts:902","AgentTool.tsx:430","coordinator/coordinatorMode.ts"], why:"여러 워커가 충돌 없이 병렬 작업하는 격리·통신 모델."},
+
+    {id:"E1", c:"E", orch:0, t:"프로바이더 usage 리포트 기반 계측", w:"컨텍스트 충만도를 토큰 추정이 아니라 프로바이더 usage로 측정. 병렬 tool-call 형제 id anchoring으로 interleaved tool_result undercount 회피.", f:["tokens.ts:226","tokens.ts:46"], why:"compaction 트리거를 정확한 실측에 건다."},
+    {id:"E2", c:"E", orch:0, t:"autocompact 임계값 + circuit breaker", w:"effectiveWindow − reservedOutput(20k) − buffer(13k), 연속 3회 실패 차단. reserved 20k는 p99.99 요약=17,387토큰 근거, breaker는 1,279 세션이 ~250K calls/day 낭비한 텔레메트리 근거.", f:["autoCompact.ts:33","autoCompact.ts:72"], why:"임계값·서킷브레이커 상수가 실제 운영 데이터로 보정됨."},
+    {id:"E3", c:"E", orch:1, t:"요약 compaction + 구조화 상태 재주입", w:"forked agent가 hidden <analysis> 후 9-섹션 <summary> 방출(진행중 작업 verbatim quote 강제). 이후 읽은 파일·plan·skill·백그라운드 에이전트·deferred 스키마·todos를 out-of-band 저장소에서 재주입.", f:["compact.ts:387","compact.ts:1415","compact/prompt.ts:61"], why:"요약만 믿지 않고 live-state를 구조적으로 복원 — 장기 작업 생존의 핵심."},
+    {id:"E4", c:"E", orch:1, t:"microcompaction(재요약 없는 tool-result clearing)", w:"time-based(서버 1h 캐시 TTL에 키잉 — cold일 때만 clear) + cached(API cache_edits로 old result 삭제하되 로컬 미수정·캐시 prefix 유지, boundary는 cache_deleted_input_tokens 보고까지 deferral).", f:["microCompact.ts:253","microCompact.ts:446","apiMicrocompact.ts"], why:"비싼 재요약 전에 싼 tool-result 정리로 토큰 확보."},
+    {id:"E5", c:"E", orch:1, t:"계층적 CLAUDE.md/memory 로딩", w:"root→cwd walk, per-file cap, nested 메모리는 non-evicting Set로 dedup(readFileState가 100-entry LRU라서).", f:["claudemd.ts:790","context.ts:155","attachments.ts:1710"], why:"디렉터리별 컨텍스트를 lazy·dedup 주입하는 메모리 모델."},
+
+    {id:"F1", c:"F", orch:1, t:"2단계 progressive disclosure (skills)", w:"L1=예산 제한 1줄 카탈로그(context window의 1%, per-entry 250자 cap, bundled skill은 절대 truncate 안 함) + per-agent delta-only reminder. L2=invoke 시에만 SKILL.md 본문 + $ARGUMENTS 치환.", f:["SkillTool/prompt.ts:20-29","loadSkillsDir.ts:344"], why:"수많은 확장을 항상-켜진 tiny index + on-demand payload로 — 토큰 효율적 확장성."},
+    {id:"F2", c:"F", orch:0, t:"Skill 도구: forward-safe allowlist + inline vs forked", w:"descriptor가 SAFE_SKILL_PROPERTIES만 포함할 때만 auto-approve(새 필드는 기본 confirm). inline 확장(인간 슬래시 경로 재사용) 또는 forked 서브에이전트.", f:["SkillTool.ts:354","SkillTool.ts:432"], why:"확장 메타데이터의 forward-compatibility를 안전하게."},
+    {id:"F3", c:"F", orch:0, t:"디렉터리/경로-조건부 skill 활성화", w:"file 도구가 트리거. nested .claude/skills walk-up(deepest-first, gitignore 검사) + paths: glob 매칭 시에만 promote.", f:["loadSkillsDir.ts:861","FileReadTool.ts:579"], why:"컨텍스트(작업 디렉터리)에 따라 능력을 자동 노출."},
+    {id:"F4", c:"F", orch:1, t:"통합 Command 모델(skill = slash command = plugin)", w:"단일 discriminated union(prompt/local/local-jsx). cwd-키 메모이즈 레지스트리가 layer별 precedence로 concat, auth/feature 게이트는 매 getCommands()마다 재실행. /x와 Skill('x')가 동일 확장 경로 수렴.", f:["commands.ts:258","commands.ts:449","types/command.ts:205"], why:"사용자·모델·플러그인 진입점을 하나의 모델로 통합 — 확장 아키텍처의 정수."},
+    {id:"F5", c:"F", orch:0, t:"마크다운 커맨드 + 게이트된 inline shell", w:"YAML frontmatter, 디렉터리→colon namespace, $ARGUMENTS/$n/named 치환, inline !`cmd` 블록은 확장 시 개별 권한 검사·MCP 출처는 하드 비활성화.", f:["argumentSubstitution.ts:94","loadPluginCommands.ts:60"], why:"비개발자도 마크다운 파일로 커맨드 작성 가능."},
+    {id:"F6", c:"F", orch:0, t:"플러그인 manifest + marketplace", w:"commands/agents/skills/hooks/mcpServers/lspServers/outputStyles 선언, github/git/npm/url/file/directory 소스.", f:["plugins/schemas.ts","builtinPlugins.ts:28"], why:"확장을 패키지로 배포·설치하는 매니페스트 스펙."},
+
+    {id:"G1", c:"G", orch:1, t:"out-of-process 설정 훅 + dual 제어 채널", w:"PreToolUse/PostToolUse/UserPromptSubmit/SessionStart/Stop 등 25+ 이벤트. JSON-over-stdin + (exit 0=ok, 2=block+stderr를 모델에 피드백, 그외=non-blocking). 훅이 tool block·input rewrite·permission·context 주입 가능.", f:["utils/hooks.ts:747","utils/hooks.ts:1117","toolHooks.ts:435"], why:"에이전트 동작을 코드 수정 없이 외부 프로세스로 가로채는 확장점."},
+    {id:"G2", c:"G", orch:0, t:"config snapshot + trust gate + 권한 precedence", w:"trust 다이얼로그 전 immutable snapshot, 단일 shouldSkipHookDueToTrust 초크포인트(untrusted repo RCE 방지), 병렬 fan-out을 deny>ask>allow로 병합, 훅 'allow'도 rule 재실행(escalation 불가).", f:["hooks/hooksConfigSnapshot.ts","toolHooks.ts:332"], why:"신뢰되지 않은 저장소의 훅이 임의 코드 실행하지 못하게."},
+
+    {id:"H1", c:"H", orch:0, t:"블록 배열 시스템 프롬프트 + 2-tier 캐시 scope", w:"getSystemPrompt이 개별 캐시 가능 string[] 반환, SYSTEM_PROMPT_DYNAMIC_BOUNDARY sentinel이 static(cacheScope 'global', org 간 공유)과 volatile 분리.", f:["constants/prompts.ts:444","systemPromptSections.ts:20","utils/api.ts:321"], why:"boundary 앞에 런타임 비트를 두면 prefix-hash variant가 2^N배 — 실제 버그 클래스."},
+    {id:"H2", c:"H", orch:1, t:"권위 레벨별 3계층 컨텍스트 주입", w:"durable 규칙→캐시 시스템 프롬프트, git status→trailing system 블록, CLAUDE.md/date→별도 low-authority isMeta user 메시지(<system-reminder> + 'highly relevant 아니면 응답 말라' 면책). 권위는 wording이 결정.", f:["context.ts:36","claudemd.ts:89","utils/api.ts:449"], why:"무엇을 어느 권위로 주입할지 분리 — 오케스트레이터의 컨텍스트 주입 설계 지침."},
+    {id:"H3", c:"H", orch:0, t:"도구 가이드/refusal/few-shot/output style", w:"병렬·dedicated tool 가이드(이름 보간), cyber-risk 명령, TodoWrite few-shot(<example>/<reasoning>), output style 주입.", f:["prompts.ts:269","TodoWriteTool/prompt.ts","outputStyles.ts:41"], why:"행동 규율을 프롬프트 섹션으로 모듈화."},
+
+    {id:"I1", c:"I", orch:1, t:"MCP 라이프사이클 + 6 트랜스포트 + OAuth/XAA", w:"@modelcontextprotocol/sdk 기반. stdio/sse/sse-ide/http/ws/sdk, config scope 7종, OAuth 자동 갱신, XAA(Cross-App Access/SEP-990), ElicitRequestSchema elicitation, resources/prompts. 전용 도구 5종 + assembleToolPool이 cache-stable prefix로 병합.", f:["services/mcp/client.ts:1-60","services/mcp/types.ts:9-50"], why:"외부 도구를 표준 프로토콜로 흡수 — 오케스트레이터의 도구 생태계 연결."},
+    {id:"I2", c:"I", orch:0, t:"IDE 통합은 MCP 채널로 구현", w:"VS Code/JetBrains 컴패니언이 sse-ide/ws-ide MCP 서버로 연결. diff 표시(callIdeRpc), @-mention 셀렉션, 셀렉션 공유, Windows→WSL 경로 변환.", f:["hooks/useDiffInIDE.ts:22-28","services/mcp/vscodeSdkMcp.ts"], why:"IDE를 별도 프로토콜 없이 MCP로 통합한 영리한 재사용."},
+    {id:"I3", c:"I", orch:0, t:"WebFetch / WebSearch 도구", w:"WebFetch는 URL→HTML→markdown→작은 fast 모델 요약. HTTP→HTTPS 업그레이드, 15분 self-cleaning 캐시, 다른 host redirect 시 새 요청 요구(SSRF성 보호), 비preapproved는 strict 125자 인용.", f:["WebFetchTool/prompt.ts:23-46","WebFetchTool/preapproved.ts"], why:"외부 콘텐츠를 모델 친화 형태로 안전하게 가져오는 패턴."},
+    {id:"I4", c:"I", orch:0, t:"Plan mode (EnterPlanMode/ExitPlanModeV2)", w:"ExitPlanModeV2는 semantic 권한 프롬프트(allowedPrompts: Bash에 대해 'run tests' 같은 의미 기술)로 계획 승인 시 권한을 함께 요청, plan 파일 영속화, teammate plan-approval 연동.", f:["ExitPlanModeV2Tool.ts:60-70","utils/plans.ts"], why:"의미 기반 권한 — '무엇을 할지'를 사람이 한 번에 승인."},
+    {id:"I5", c:"I", orch:0, t:"기타 도구군", w:"NotebookEdit(Jupyter), PowerShell(Windows), LSP(언어서버 진단), Sleep(autonomous pacing), ScheduleCron/RemoteTrigger, AskUserQuestion, Brief, Config, SyntheticOutput, Task*/Team*.", f:["src/tools/"], why:"도메인별 도구 확장의 폭."},
+
+    {id:"J1", c:"J", orch:1, t:"append-only JSONL + 배칭 write queue", w:"per-file debounce(100ms, remote ingress시 10ms), 100MB chunk cap, lazy session-file materialization, 단일 shouldSkipPersistence 가드, in-flight barrier로 shutdown flush 보장.", f:["sessionStorage.ts:606","sessionStorage.ts:841"], why:"크래시 복구 가능한 대화 영속화의 정석."},
+    {id:"J2", c:"J", orch:1, t:"parentUuid 메시지 DAG + resume 재구성", w:"compact boundary는 parentUuid=null(logicalParentUuid에 진짜 부모), leaf에서 backward walk(cycle guard) 후 병렬 tool_result orphan 복구.", f:["sessionStorage.ts:2069","sessionStorage.ts:2118"], why:"병렬 tool_use N개가 한 message.id 공유 → DAG·orphan 복구 필수."},
+    {id:"J3", c:"J", orch:0, t:"tombstone 삭제 + tail-window 메타데이터 복구", w:"64KB tail에 ftruncate(>50MB는 full-rewrite 거부), title/tag를 EOF에 재append(외부 SDK 편집 흡수 — CRDT-lite LWW).", f:["sessionStorage.ts:871","sessionStorage.ts:721"], why:"append-only 로그에서 안전한 in-place 삭제·메타 갱신."},
+    {id:"J4", c:"J", orch:0, t:"파일 체크포인트 + /rewind", w:"edit 전 copy-on-write 백업 sha256(path)[:16]@vN, MAX_SNAPSHOTS ring + transcript에 스냅샷 기록(재시작 생존).", f:["fileHistory.ts:725-731","MessageSelector.tsx"], why:"코드+대화를 함께 되감는 undo 모델."},
+    {id:"J5", c:"J", orch:1, t:"transcript-파생 ephemeral todos", w:"별도 영속화 없이 transcript 역주사로 rehydrate, 전부 완료 시 []로 auto-clear. TURNS_SINCE_WRITE:10, TURNS_BETWEEN_REMINDERS:10.", f:["TodoWriteTool.ts:65","attachments.ts:254-257"], why:"todo 상태를 별도 저장 없이 대화에서 재구성 — 가벼운 계획 추적."},
+    {id:"J6", c:"J", orch:0, t:"버전 게이트 마이그레이션", w:"정수 게이트 config 마이그레이션(멱등·self-guard) + transcript는 read-time tolerance(절대 rewrite 안 함).", f:["main.tsx:325","migrations/migrateSonnet45ToSonnet46.ts"], why:"설정 스키마 진화를 안전하게."},
+
+    {id:"K1", c:"K", orch:1, t:"통합 command queue(steering backbone)", w:"React 밖 module singleton, useSyncExternalStore 브리지 + generator 직접 read. queued 입력을 현재 턴에 queued_command attachment로 주입(agentId-scoped, slash는 턴 후로 deferral).", f:["messageQueueManager.ts:40","query.ts:1547-1590"], why:"실행 중 사용자 스티어링·큐 입력을 루프에 안전하게 주입."},
+    {id:"K2", c:"K", orch:1, t:"2-tier interruption(intent in AbortSignal.reason)", w:"'user-cancel'(partial 텍스트 commit 후 abort+marker) vs 'interrupt'(marker 억제) vs 'sibling_error'. 모든 abort 경로가 synthetic is_error tool_result로 tool_use/result pairing 보장.", f:["useCancelRequest.ts:87","StreamingToolExecutor.ts:153"], why:"취소 의도를 AbortSignal.reason으로 전달 — 깔끔한 중단·재개."},
+    {id:"K3", c:"K", orch:0, t:"jitter-free 스트리밍 렌더 dispatcher", w:"partial→committed atomic clear-then-append, 마지막 newline까지만 렌더, signature_delta는 토큰 카운터 제외, useDeferredValue로 입력 응답성.", f:["messages.ts:2930-3095","REPL.tsx:1458-1473"], why:"스트리밍 UI의 깜빡임 없는 렌더링."},
+    {id:"K4", c:"K", orch:1, t:"QueryGuard generation-counter + abort tree", w:"monotonic generation으로 cancel-then-resubmit race 무효화, WeakRef parent↔child 전파.", f:["QueryGuard.ts:29-121","abortController.ts:16-99"], why:"재제출 레이스를 generation 카운터로 무효화 — AbortController 스레딩 대안."},
+
+    {id:"L1", c:"L", orch:0, t:"remote bridge(claude.ai → 로컬 세션)", w:"epoch-versioned worker JWT, sequence-resumed transport rebuild, set_model/set_permission_mode push(verdict로 거부 가능).", f:["remoteBridgeCore.ts:140","bridgeMessaging.ts:132"], why:"원격 클라이언트가 로컬 에이전트를 안전하게 구동."},
+    {id:"L2", c:"L", orch:0, t:"managed settings / killswitch / trusted device", w:"시간당 폴, byte-exact SHA-256 ETag, fail-open-to-stale-cache, accept-or-die(reject→gracefulShutdownSync(1)). killswitch는 기본값에 안전 방향 인코딩.", f:["remoteManagedSettings/index.ts:105","securityCheck.tsx:67"], why:"엔터프라이즈 원격 제어·긴급 차단."},
+    {id:"L3", c:"L", orch:0, t:"telemetry / OTel", w:"세션 트레이싱·메트릭 export·플러그인 텔레메트리(bigqueryExporter, perfettoTracing, sessionTracing).", f:["utils/telemetry/"], why:"운영 관측성 — circuit breaker 상수의 근거 데이터 출처."}
+  ];
+
+  const CROSS = [
+    ["End-to-end async-generator 파이프라인", "모델 호출·턴 루프·도구 진행·retry·서브에이전트·훅이 모두 generator. 단일 정렬 채널, 자동 backpressure, 구조적 취소."],
+    ["&lt;system-reminder&gt; isMeta 주입 채널", "모든 out-of-band steering(todo/메모리/compaction/skill/훅 context/queued command)을 isMeta user 메시지로 고정 루프 지점에 주입. 시스템 프롬프트 미오염."],
+    ["prompt-cache 바이트 안정성 강박", "tool base 세션 캐시 후 overlay, static/dynamic boundary sentinel, mutate-don't-replace, fork prefix 바이트 동일, cache_edits로 무효화 없이 축소."],
+    ["isConcurrencySafe(input) read-only 동시성", "연속 안전 호출 한 배치(cap 10), 비안전은 단독 ordering barrier. 병렬 서브에이전트가 공짜 파생."],
+    ["대형 카탈로그 2단계 progressive disclosure", "tiny always-on index + on-demand payload(deferred tool/skill)."],
+    ["fail-closed 기본값 + layered-precedence override", "비관적 도구 기본, headless auto-deny, untrusted repo 훅 skip, killswitch 안전 기본. deny>ask>allow + 소스 precedence."],
+    ["build/feature-flag 게이팅 + DCE", "positive-ternary `flag ? checks : false`로 번들러가 게이트 문자열 strip."],
+    ["제어 흐름용 tagged discriminated union", "Terminal/Continue, AbortSignal.reason, PermissionDecisionReason, TaskType/Status, 훅 결과, command mode."],
+    ["module-singleton + useSyncExternalStore 브리지", "React UI와 비-React 루프가 동일 상태를 race 없이 관측(steering queue, skill sent-tracking, write queue)."],
+    ["withhold-then-recover + synthetic-result pairing", "transient 에러 숨기고 복구 시도, 모든 abort 경로에서 tool_use/result 짝 보장."]
+  ];
+
+  const STANDOUT = [
+    ["mutate-don't-replace 마지막 스트림 메시지", "stop_reason/usage가 message_delta에서만 도착, lazy transcript queue가 live ref 보유 — 교체 금지.", "claude.ts:2236-2248"],
+    ["global cross-org prompt-cache scope", "static prefix를 cacheScope:'global'로 태그해 조직 간 캐시 공유. boundary 앞 런타임 비트는 prefix-hash 2^N배.", "api.ts:74-83"],
+    ["cached microcompaction", "로컬 미수정·prefix 무효화 없이 cache_edits로 old tool result 삭제, cache_deleted_input_tokens 보고까지 boundary deferral.", "microCompact.ts:369-394"],
+    ["time-based microcompact가 서버 1h 캐시 TTL에 키잉", "캐시가 확실히 cold일 때만 clear → 안 일어날 miss를 강제하지 않음.", "timeBasedMCConfig.ts:21-24"],
+    ["Bash 권한 비대칭 env-var 스트리핑", "ALLOW는 safe만, DENY/ASK는 전부 fixed-point까지.", "bashPermissions.ts:733"],
+    ["Windows 경로 canonicalization을 모든 플랫폼에서", "NTFS가 Linux/macOS에 마운트 가능하므로. classifier-approvable=false로 auto/bypass도 우회 불가.", "filesystem.ts:537"],
+    ["autocompact circuit breaker", "1,279 세션 50+회 실패(~250K calls/day) 텔레메트리 근거, reserved 20k는 p99.99 요약=17,387토큰 근거.", "autoCompact.ts:28-91"],
+    ["Bash 에러는 sibling subprocess cascade-cancel, Read/WebFetch는 안 함", "shell은 암묵 의존 체인, read는 독립.", "StreamingToolExecutor.ts:354-363"],
+    ["tombstone 삭제", "append-only 로그를 64KB tail ftruncate로 in-place 변경, full uuid 키 검색, >50MB는 거부.", "sessionStorage.ts:871-933"],
+    ["parentUuid는 list가 아니라 DAG", "병렬 tool_use N개가 한 message.id 공유 → 별도 orphan-recovery 패스 필수.", "sessionStorage.ts:2118"],
+    ["steering queue가 React 밖 singleton", "Ink/React 배칭이 알림을 drop해서 의도적으로 분리.", "messageQueueManager.ts"],
+    ["Esc 시 partial 텍스트를 abort 전에 실 메시지로 commit", "transcript가 [user, partial-assistant, '[Request interrupted]']로 끝나 사용자가 읽은 것 보존.", "REPL.tsx:2121-2129"]
+  ];
+
+  const BORROW = [
+    {r:1, pat:"async-generator 턴 루프 + tagged Terminal/Continue union", what:"턴을 단일 generator로, 모든 종료/재시도 이유를 discriminated value로 return/저장.", cau:"generator는 AbortSignal로 자동 취소 안 됨 — phase 경계마다 signal.aborted 직접 체크(query.ts ~6회).", diff:"mid", note:"★ 최고 ROI · 설계 척추", orch:1},
+    {r:2, pat:"tool_use 관측을 continue 신호로(stop_reason 신뢰 금지)", what:"스트리밍 중 tool_use 블록 유무 boolean으로 루프.", cau:"end_turn/max_tokens는 message_delta에서만 읽고 per-block(null)에서 읽지 말 것.", diff:"low", note:"★ 거의 공짜 · 실 버그 예방", orch:1},
+    {r:3, pat:"<system-reminder> 메타 메시지 out-of-band 주입", what:"모든 reminder/상태를 isMeta·저권위 user 메시지로 시스템 프롬프트 밖에 주입.", cau:"어떤 이벤트가 raw stdout을 노출할지 제한(SessionStart/UserPromptSubmit만), 빈 content는 렌더 안 함.", diff:"low", note:"오케스트레이션 핵심", orch:1},
+    {r:4, pat:"read-only vs mutating 동시성 배칭", what:"tool당 isConcurrencySafe(input) 술어, 안전 호출 bounded-parallel(cap 10), 비안전은 단독 직렬.", cau:"술어는 파싱된 input에 평가, throw 시 unsafe 기본. concurrency-safe 도구의 contextModifier는 무시.", diff:"mid", note:"", orch:1},
+    {r:5, pat:"모든 tool_use에 tool_result 보장(abort 포함)", what:"취소/에러 경로에서 orphan tool_use에 synthetic is_error 결과 생성.", cau:"user-reject는 'User rejected'로(모델이 의도 학습), 일반 interrupt와 구분.", diff:"low", note:"★ API 유효성·resumability 필수", orch:1},
+    {r:6, pat:"retry generator가 status 메시지 yield", what:"'retrying in Nms'를 yield해 UI 분리, exp backoff+jitter+retry-after, 529→cheaper fallback을 typed error로.", cau:"fallback 모델 replay 전 model-bound thinking signature strip.", diff:"mid", note:"", orch:0},
+    {r:7, pat:"fail-closed Tool 계약 + buildTool 기본값", what:"단일 계약 + 안전 기본 주입 팩토리, prompt()(LLM용)와 description()(권한 다이얼로그) 분리.", cau:"isReadOnly/isConcurrencySafe를 false로 기본 — true 기본이면 mutating 도구를 조용히 병렬화.", diff:"low", note:"", orch:0},
+    {r:8, pat:"deny>ask>allow 평가 순서(보안 ask는 bypass보다 먼저)", what:"고정 순번 단축평가, explicit deny/ask/민감자원 safetyCheck를 bypass-all 모드 앞에. structured decisionReason 태깅.", cau:"순번을 코드 주석으로 명시(순서가 곧 스펙). 새 bypass 모드 추가 시 어떤 체크가 immune인지 명시 결정.", diff:"mid", note:"", orch:0},
+    {r:9, pat:"tiered 컨텍스트 축소(cheap→expensive) + usage 계측", what:"microcompact(tool-result clearing)를 full 요약 전에, freed-token delta를 임계값 검사에 forward. 윈도우 충만도는 프로바이더 usage로.", cau:"cache-edit microcompact는 프로바이더 기능 의존, 없으면 로컬 mutate(cold cache) fallback.", diff:"mid", note:"", orch:1},
+    {r:10, pat:"compaction = narrative 요약 + 구조화 live-state 재주입", what:"요약만 믿지 말고 out-of-band 저장소에서 파일/plan/skill/background-task/todos 재주입, transcript 경로로 정밀 복구.", cau:"todos/plans를 app state에 둬야 transcript rewrite 생존. 메모리/plan 파일은 file-restore에서 제외.", diff:"high", note:"장기작업 생존", orch:1},
+    {r:11, pat:"module-singleton queue + external-store 브리지(steering)", what:"입력/조종 queue를 우선순위(user>system) singleton에, UI는 useSyncExternalStore, 루프는 직접 read.", cau:"React 18+ 전용 — 타 프레임워크는 등가물로. dequeue를 agentId·slash-vs-prompt로 scope.", diff:"mid", note:"", orch:1},
+    {r:12, pat:"default-deny 컨텍스트 격리(서브에이전트)", what:"가변 캐시 clone + 모든 mutation/UI 콜백 no-op 기본, 좁은 boolean opt-in, cleanup용 별도 always-on 사이드채널.", cau:"격리 하에서도 동작해야 하는 리소스 등록/cleanup 채널 분리.", diff:"mid", note:"오케스트레이션 핵심", orch:1},
+    {r:13, pat:"prompt-cache 바이트 안정성 + byte-identical fork", what:"Zod→JSON identity 캐시, tool base 세션 캐시 후 per-request overlay, fork는 부모의 렌더된 prompt/tool/thinking 재사용.", cau:"프로바이더가 tool 바이트로 캐시 안 하면 효과 제한(정렬 안정성은 여전히 이득). lazySchema로 참조 안정성 필요.", diff:"high", note:"Anthropic API 특화", orch:0},
+    {r:14, pat:"비대칭 정규화(allowlist vs denylist) + compound-command 가드", what:"allow는 보수적(safe set만), deny는 공격적(전부 strip, fixed-point), wildcard는 exact 미매치·prefix는 compound 미매치.", cau:"실행 영향 env var(PATH/LD_*/PYTHONPATH/NODE_OPTIONS) 절대 safe set 미포함, wrapper 스트리핑 regex 값 클래스를 char allowlist로 bound.", diff:"high", note:"shell 도구 필수", orch:0}
+  ];
+
+  const DIFF_LABEL = {low:["낮음","d-low"], mid:["중간","d-mid"], high:["높음","d-high"]};
+
+  // ---------------------------------------------------------------------------
+  // RENDER HELPERS
+  // ---------------------------------------------------------------------------
+  const $ = (s, el=document) => el.querySelector(s);
+  const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
+  const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const refHtml = (arr) => arr.map(r => '<code class="ref">'+esc(r)+'</code>').join(" ");
+
+  // ----- feature catalog -----
+  const featGrid = $("#featGrid");
+  function renderFeatures() {
+    featGrid.innerHTML = FEATURES.map(f => {
+      const cat = CATS[f.c];
+      return '<article class="feat" data-id="'+f.id+'" data-cat="'+f.c+'" data-orch="'+f.orch+'" '
+        + 'style="--ccol:'+cat.col+'" '
+        + 'data-text="'+esc((f.id+" "+f.t+" "+f.w+" "+(f.why||"")+" "+f.f.join(" ")+" "+cat.name).toLowerCase())+'">'
+        + '<div class="fh"><span class="ft">'+esc(f.t)+'</span><span class="fid">'+f.id+'</span></div>'
+        + '<p>'+esc(f.w)+'</p>'
+        + (f.why ? '<div class="why">→ '+esc(f.why)+'</div>' : '')
+        + '<div class="reflist">'+refHtml(f.f)+'</div>'
+        + (f.orch ? '<div style="margin-top:9px"><span class="pill orch">⚙ 오케스트레이션</span></div>' : '')
+        + '</article>';
+    }).join("");
+  }
+
+  // ----- category chips -----
+  const catChips = $("#catChips");
+  const activeCats = new Set();
+  function renderCatChips() {
+    let html = '<button class="chip" data-cat="all" aria-pressed="true">전체</button>';
+    for (const k of Object.keys(CATS)) {
+      const n = FEATURES.filter(f => f.c === k).length;
+      html += '<button class="chip cat" data-cat="'+k+'" aria-pressed="false" style="--ccol:'+CATS[k].col+'">'+k+' · '+esc(CATS[k].name)+' <span style="opacity:.6">'+n+'</span></button>';
+    }
+    catChips.innerHTML = html;
+  }
+
+  function applyFeatureFilters() {
+    const q = $("#search").value.trim().toLowerCase();
+    const orchOnly = $("#orchOnly").checked;
+    let shown = 0;
+    $$(".feat", featGrid).forEach(el => {
+      const okCat = activeCats.size === 0 || activeCats.has(el.dataset.cat);
+      const okOrch = !orchOnly || el.dataset.orch === "1";
+      const okQ = !q || el.dataset.text.includes(q);
+      const show = okCat && okOrch && okQ;
+      el.classList.toggle("hide", !show);
+      if (show) shown++;
+    });
+    $("#featCount").textContent = shown + " / " + FEATURES.length + " 항목 표시";
+  }
+
+  // ----- cross + standout -----
+  function renderPatterns() {
+    $("#crossList").innerHTML = CROSS.map(([t,d]) =>
+      '<li><b>'+t+'</b> — '+esc(d)+'</li>').join("");
+    $("#standoutList").innerHTML = STANDOUT.map(([t,d,ref]) =>
+      '<li><b>'+esc(t)+'</b> — '+esc(d)+' <code class="ref">'+esc(ref)+'</code></li>').join("");
+  }
+
+  // ----- borrow table -----
+  const borrowBody = $("#borrowBody");
+  let activeDiff = "all";
+  let orchBorrowOnly = false;
+  function renderBorrow() {
+    borrowBody.innerHTML = BORROW.map(b => {
+      const [dl, dc] = DIFF_LABEL[b.diff];
+      return '<tr data-diff="'+b.diff+'" data-orch="'+b.orch+'" class="'+(b.orch?'orow':'')+'">'
+        + '<td><span class="rank">'+b.r+'</span></td>'
+        + '<td><div class="pat">'+esc(b.pat)+'</div><div class="cau" style="margin-top:4px;color:var(--muted)">'+esc(b.what)+'</div></td>'
+        + '<td class="cau">'+esc(b.cau)+'</td>'
+        + '<td><span class="diff '+dc+'">'+dl+'</span></td>'
+        + '<td>'+(b.note ? '<span class="pill'+(b.orch?' orch':'')+'">'+esc(b.note)+'</span>' : '<span style="color:var(--faint)">—</span>')+'</td>'
+        + '</tr>';
+    }).join("");
+    applyBorrowFilters();
+  }
+  function applyBorrowFilters() {
+    let shown = 0;
+    $$("tr", borrowBody).forEach(tr => {
+      const okDiff = activeDiff === "all" || tr.dataset.diff === activeDiff;
+      const okOrch = !orchBorrowOnly || tr.dataset.orch === "1";
+      const show = okDiff && okOrch;
+      tr.classList.toggle("thide", !show);
+      if (show) shown++;
+    });
+    $("#borrowCount").textContent = shown + " / " + BORROW.length + " 패턴";
+  }
+  function visibleBorrowMarkdown() {
+    const rows = BORROW.filter(b => (activeDiff==="all"||b.diff===activeDiff) && (!orchBorrowOnly||b.orch));
+    let md = "# Claude Code → 내 오케스트레이션 에이전트: 차용 체크리스트\n\n";
+    rows.forEach(b => {
+      md += "- [ ] **#"+b.r+" "+b.pat+"** ("+DIFF_LABEL[b.diff][0]+(b.orch?", 오케스트레이션 우선":"")+")\n";
+      md += "    - 무엇: "+b.what+"\n";
+      md += "    - 주의: "+b.cau+"\n";
+    });
+    return md;
+  }
+
+  // ---------------------------------------------------------------------------
+  // WIRE UP
+  // ---------------------------------------------------------------------------
+  renderFeatures();
+  renderCatChips();
+  renderPatterns();
+  renderBorrow();
+  applyFeatureFilters();
+
+  $("#search").addEventListener("input", applyFeatureFilters);
+  $("#orchOnly").addEventListener("change", applyFeatureFilters);
+
+  catChips.addEventListener("click", (e) => {
+    const btn = e.target.closest("button.chip"); if (!btn) return;
+    const cat = btn.dataset.cat;
+    if (cat === "all") {
+      activeCats.clear();
+      $$("button.chip", catChips).forEach(b => b.setAttribute("aria-pressed", b.dataset.cat === "all" ? "true" : "false"));
+    } else {
+      $("button.chip[data-cat='all']", catChips).setAttribute("aria-pressed", "false");
+      const on = btn.getAttribute("aria-pressed") === "true";
+      btn.setAttribute("aria-pressed", on ? "false" : "true");
+      if (on) activeCats.delete(cat); else activeCats.add(cat);
+      if (activeCats.size === 0) $("button.chip[data-cat='all']", catChips).setAttribute("aria-pressed", "true");
+    }
+    applyFeatureFilters();
+  });
+
+  $("#diffChips").addEventListener("click", (e) => {
+    const btn = e.target.closest("button.chip"); if (!btn) return;
+    activeDiff = btn.dataset.diff;
+    $$("button.chip", $("#diffChips")).forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    applyBorrowFilters();
+  });
+  $("#orchBorrow").addEventListener("change", (e) => { orchBorrowOnly = e.target.checked; applyBorrowFilters(); });
+
+  $("#copyTasks").addEventListener("click", async () => {
+    const md = visibleBorrowMarkdown();
+    const status = $("#copyStatus");
+    try { await navigator.clipboard.writeText(md); status.textContent = "복사됨 ✓ (" + (md.match(/- \[ \]/g)||[]).length + "개 항목)"; }
+    catch (err) { status.textContent = "복사 실패 — 텍스트를 직접 선택하세요."; }
+    setTimeout(() => { status.textContent = ""; }, 4000);
+  });
+  </script>
+</body>
+</html>

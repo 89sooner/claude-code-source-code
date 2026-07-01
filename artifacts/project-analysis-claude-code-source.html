@@ -1,0 +1,993 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Code Source v2.1.88 프로젝트 분석 산출물</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --ink: #17202a;
+      --muted: #5e6876;
+      --line: #d9dee7;
+      --soft: #eef2f6;
+      --accent: #0f6b8f;
+      --accent-2: #8a5a00;
+      --danger: #ba2f24;
+      --warn: #9a6500;
+      --ok: #1f7a45;
+      --info: #275f9f;
+      --shadow: 0 10px 28px rgba(23, 32, 42, 0.08);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        linear-gradient(180deg, #f7f8fa 0%, #eef3f6 46%, #f7f8fa 100%);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(196px, 248px) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 22px 18px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      overflow: auto;
+    }
+    .brand {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .brand strong {
+      font-size: 15px;
+      line-height: 1.35;
+    }
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    nav {
+      display: grid;
+      gap: 6px;
+      margin-top: 18px;
+    }
+    nav a {
+      display: block;
+      padding: 9px 10px;
+      border-radius: 6px;
+      color: #253140;
+      font-size: 13px;
+    }
+    nav a:hover {
+      background: var(--soft);
+      text-decoration: none;
+    }
+    .main {
+      min-width: 0;
+      padding: 28px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.75fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .hero-block,
+    .panel,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .hero-block {
+      padding: 24px;
+      min-height: 272px;
+      display: grid;
+      align-content: space-between;
+      gap: 18px;
+      overflow: hidden;
+    }
+    .eyebrow {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 8px 0 10px;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+    .lead {
+      max-width: 820px;
+      color: #344252;
+      font-size: 16px;
+      line-height: 1.65;
+      margin: 0;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    button,
+    .button-link {
+      appearance: none;
+      border: 1px solid #b8c5d2;
+      background: #fff;
+      color: #1e2b38;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button:hover,
+    .button-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      text-decoration: none;
+    }
+    button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .meta-panel {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .metric {
+      padding: 12px;
+      background: #f6f8fb;
+      border: 1px solid #e4e9f0;
+      border-radius: 7px;
+      min-height: 74px;
+    }
+    .metric b {
+      display: block;
+      font-size: 21px;
+      line-height: 1.1;
+      margin-bottom: 4px;
+      overflow-wrap: anywhere;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    section {
+      margin: 18px 0;
+      scroll-margin-top: 20px;
+    }
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 22px;
+      line-height: 1.25;
+      margin: 0;
+      letter-spacing: 0;
+    }
+    .section-head p,
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 0;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      padding: 16px;
+      min-width: 0;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+    .card p {
+      color: #394858;
+      line-height: 1.55;
+      font-size: 14px;
+      margin: 0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: #344252;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .badge.high { border-color: #efc1bc; background: #fff2f0; color: var(--danger); }
+    .badge.medium { border-color: #efd8a8; background: #fff7e8; color: var(--warn); }
+    .badge.low { border-color: #b9dbc6; background: #effaf3; color: var(--ok); }
+    .badge.info { border-color: #b9cdea; background: #eef5ff; color: var(--info); }
+    .panel {
+      padding: 18px;
+      overflow: hidden;
+    }
+    .bars {
+      display: grid;
+      gap: 9px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(88px, 150px) minmax(0, 1fr) 92px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .bar-label {
+      color: #253140;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bar-track {
+      height: 12px;
+      background: #e8edf3;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #dce3eb;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1c8096, #6d8d43);
+    }
+    .bar-num {
+      color: var(--muted);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .diagram-wrap {
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      padding: 10px;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      min-width: 760px;
+      height: auto;
+    }
+    .svg-box { fill: #fff; stroke: #9fb1c3; stroke-width: 1.4; rx: 8; }
+    .svg-core { fill: #eef8fb; stroke: #18809d; }
+    .svg-risk { fill: #fff5ee; stroke: #c07a32; }
+    .svg-text { fill: #17202a; font-size: 13px; font-weight: 650; }
+    .svg-small { fill: #536170; font-size: 11px; }
+    .arrow { stroke: #7c8b9b; stroke-width: 1.5; marker-end: url(#arrow); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th,
+    td {
+      padding: 10px 9px;
+      border-bottom: 1px solid #e5eaf0;
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.45;
+    }
+    th {
+      color: #22303d;
+      background: #f4f7fa;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td code,
+    .code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: #182534;
+      background: #eef2f6;
+      padding: 2px 5px;
+      border-radius: 4px;
+      overflow-wrap: anywhere;
+    }
+    .table-scroll {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      background: #fff;
+      max-height: 560px;
+    }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .risk-tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .risk-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .risk-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+    .risk-card[hidden] { display: none; }
+    .risk-card h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+    .risk-card p {
+      margin: 0;
+      color: #394858;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      background: #f0f8fb;
+      border-radius: 6px;
+      color: #243544;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+    .callout.warn {
+      border-color: var(--warn);
+      background: #fff7e8;
+    }
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+    .dot {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e8f2f5;
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 12px;
+      border: 1px solid #c7dce4;
+    }
+    .step strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 14px;
+    }
+    .step span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .source-search {
+      width: 100%;
+      max-width: 380px;
+      border: 1px solid #b8c5d2;
+      border-radius: 6px;
+      padding: 9px 10px;
+      font: inherit;
+      font-size: 13px;
+      background: #fff;
+    }
+    .copy-state {
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 18px;
+    }
+    .footer {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 24px 0 4px;
+    }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .hero { grid-template-columns: 1fr; }
+      .grid-3,
+      .grid-2,
+      .risk-list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .main { padding: 16px; }
+      .hero-block,
+      .panel,
+      .card,
+      .meta-panel { padding: 14px; }
+      nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric-grid { grid-template-columns: 1fr; }
+      .section-head {
+        display: grid;
+        align-items: start;
+      }
+      .bar-row {
+        grid-template-columns: 92px minmax(0, 1fr);
+      }
+      .bar-num {
+        grid-column: 2;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <strong>프로젝트 분석 Artifact</strong>
+        <span>대상: <span class="code">@anthropic-ai/claude-code-source</span><br>버전: <span class="code">2.1.88</span></span>
+      </div>
+      <nav aria-label="문서 섹션">
+        <a href="#snapshot">스냅샷</a>
+        <a href="#architecture">아키텍처</a>
+        <a href="#inventory">구성 분포</a>
+        <a href="#findings">핵심 발견</a>
+        <a href="#risks">리스크</a>
+        <a href="#sources">소스 근거</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="hero" id="snapshot">
+        <div class="hero-block">
+          <div>
+            <div class="eyebrow">2026-05-10 현재 워크트리 기준</div>
+            <h1>Claude Code v2.1.88 소스 분석</h1>
+            <p class="lead">
+              이 저장소는 npm 패키지 <span class="code">@anthropic-ai/claude-code</span>의 번들에서 추출한 TypeScript 소스 분석 프로젝트다.
+              핵심은 대화 루프, 도구 실행, 권한·상태·세션 저장, MCP/플러그인/스킬 확장, 원격 설정과 텔레메트리 제어면을 함께 갖춘 생산형 CLI 에이전트 하니스다.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button type="button" id="copySummary">요약 복사</button>
+            <a class="button-link" href="#sources">근거 보기</a>
+            <span class="copy-state" id="copyState" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="meta-panel hero-block">
+          <div class="metric-grid">
+            <div class="metric"><b>1,884</b><span>src 내 TS/TSX 파일</span></div>
+            <div class="metric"><b>512,664</b><span>src TS/TSX 라인</span></div>
+            <div class="metric"><b>85</b><span>commands 하위 index 엔트리</span></div>
+            <div class="metric"><b>40+</b><span>도구 구현/게이트 후보</span></div>
+          </div>
+          <div class="callout warn">
+            README는 108개 feature-gated 모듈이 npm 공개 산출물에 없다고 명시한다. 따라서 이 저장소는 연구와 구조 파악에는 유용하지만, 원본 내부 모노레포와 동등한 빌드 소스는 아니다.
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <div class="grid-3">
+          <article class="card">
+            <span class="badge info">정체성</span>
+            <h3>디컴파일/언번들 연구 저장소</h3>
+            <p><span class="code">package.json</span>의 설명은 "Claude Code v2.1.88 - decompiled source for research"이며, README는 상업적 사용 금지와 Anthropic 지식재산권 고지를 포함한다.</p>
+          </article>
+          <article class="card">
+            <span class="badge medium">빌드 상태</span>
+            <h3>완전 빌드보다 best-effort</h3>
+            <p><span class="code">scripts/build.mjs</span>는 <span class="code">feature()</span>, <span class="code">MACRO</span>, 누락 모듈을 변환·스텁 처리한다. <span class="code">prepare-src.mjs</span>는 실제 <span class="code">src/</span>를 패치하므로 실행 전 변경 범위 확인이 필요하다.</p>
+          </article>
+          <article class="card">
+            <span class="badge high">검토 포인트</span>
+            <h3>제어면과 관측면이 크다</h3>
+            <p>문서와 소스 모두 원격 관리 설정, GrowthBook 게이트, 텔레메트리, 권한 우회/Auto/Fast 모드 제어 등 런타임 동작을 바꾸는 경로가 많다는 점을 보여준다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <div class="section-head">
+          <div>
+            <h2>실행 경로 지도</h2>
+            <p>실제 소스에서 확인한 주요 모듈 연결을 단순화한 흐름이다.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="diagram-wrap" role="img" aria-label="Claude Code 실행 경로 다이어그램">
+            <svg viewBox="0 0 980 520" aria-hidden="true">
+              <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+                  <polygon points="0 0, 8 3.5, 0 7" fill="#7c8b9b"></polygon>
+                </marker>
+              </defs>
+              <rect class="svg-box" x="30" y="36" width="175" height="74"></rect>
+              <text class="svg-text" x="52" y="67">entrypoints/cli.tsx</text>
+              <text class="svg-small" x="52" y="90">fast-path, daemon, bridge</text>
+
+              <rect class="svg-box" x="270" y="36" width="175" height="74"></rect>
+              <text class="svg-text" x="305" y="67">main.tsx</text>
+              <text class="svg-small" x="292" y="90">Commander, init, REPL</text>
+
+              <rect class="svg-core" x="520" y="36" width="175" height="74"></rect>
+              <text class="svg-text" x="555" y="67">QueryEngine.ts</text>
+              <text class="svg-small" x="542" y="90">SDK/headless lifecycle</text>
+
+              <rect class="svg-core" x="770" y="36" width="175" height="74"></rect>
+              <text class="svg-text" x="823" y="67">query.ts</text>
+              <text class="svg-small" x="795" y="90">agent loop, API stream</text>
+
+              <line class="arrow" x1="205" y1="73" x2="270" y2="73"></line>
+              <line class="arrow" x1="445" y1="73" x2="520" y2="73"></line>
+              <line class="arrow" x1="695" y1="73" x2="770" y2="73"></line>
+
+              <rect class="svg-box" x="90" y="182" width="190" height="80"></rect>
+              <text class="svg-text" x="128" y="214">commands.ts</text>
+              <text class="svg-small" x="113" y="237">slash commands, skills, plugins</text>
+
+              <rect class="svg-core" x="395" y="174" width="210" height="96"></rect>
+              <text class="svg-text" x="438" y="207">Tool system</text>
+              <text class="svg-small" x="418" y="231">Tool.ts + tools.ts registry</text>
+              <text class="svg-small" x="418" y="251">validate, permission, call, render</text>
+
+              <rect class="svg-core" x="720" y="174" width="210" height="96"></rect>
+              <text class="svg-text" x="747" y="207">Streaming executor</text>
+              <text class="svg-small" x="746" y="231">parallel-safe vs exclusive tools</text>
+              <text class="svg-small" x="746" y="251">ordered result emission</text>
+
+              <line class="arrow" x1="855" y1="110" x2="830" y2="174"></line>
+              <line class="arrow" x1="770" y1="222" x2="605" y2="222"></line>
+              <line class="arrow" x1="395" y1="222" x2="280" y2="222"></line>
+
+              <rect class="svg-box" x="60" y="340" width="180" height="80"></rect>
+              <text class="svg-text" x="103" y="373">AppState</text>
+              <text class="svg-small" x="82" y="396">permissions, tasks, MCP, plugins</text>
+
+              <rect class="svg-risk" x="295" y="330" width="190" height="100"></rect>
+              <text class="svg-text" x="323" y="362">Remote control</text>
+              <text class="svg-small" x="318" y="386">managed settings, GrowthBook</text>
+              <text class="svg-small" x="318" y="406">killswitches, policy limits</text>
+
+              <rect class="svg-risk" x="535" y="330" width="190" height="100"></rect>
+              <text class="svg-text" x="590" y="362">Telemetry</text>
+              <text class="svg-small" x="560" y="386">1P events, Datadog, metadata</text>
+              <text class="svg-small" x="560" y="406">tool input truncation rules</text>
+
+              <rect class="svg-box" x="775" y="330" width="170" height="100"></rect>
+              <text class="svg-text" x="810" y="362">Persistence</text>
+              <text class="svg-small" x="798" y="386">session JSONL, resume</text>
+              <text class="svg-small" x="798" y="406">file history, transcripts</text>
+
+              <line class="arrow" x1="500" y1="270" x2="150" y2="340"></line>
+              <line class="arrow" x1="525" y1="270" x2="390" y2="330"></line>
+              <line class="arrow" x1="585" y1="270" x2="630" y2="330"></line>
+              <line class="arrow" x1="835" y1="270" x2="860" y2="330"></line>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <section id="inventory">
+        <div class="section-head">
+          <div>
+            <h2>구성 분포</h2>
+            <p>현재 파일 시스템에서 직접 집계한 <span class="code">src/</span> 하위 TS/TSX 라인 수와 파일 수다.</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <h3>상위 디렉터리 라인 분포</h3>
+            <div class="bars" aria-label="라인 수 기준 상위 디렉터리">
+              <div class="bar-row"><span class="bar-label">utils</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-num">180,472 / 564</span></div>
+              <div class="bar-row"><span class="bar-label">components</span><span class="bar-track"><span class="bar-fill" style="width:45.2%"></span></span><span class="bar-num">81,546 / 389</span></div>
+              <div class="bar-row"><span class="bar-label">services</span><span class="bar-track"><span class="bar-fill" style="width:29.7%"></span></span><span class="bar-num">53,680 / 130</span></div>
+              <div class="bar-row"><span class="bar-label">tools</span><span class="bar-track"><span class="bar-fill" style="width:28.2%"></span></span><span class="bar-num">50,828 / 184</span></div>
+              <div class="bar-row"><span class="bar-label">commands</span><span class="bar-track"><span class="bar-fill" style="width:14.6%"></span></span><span class="bar-num">26,428 / 189</span></div>
+              <div class="bar-row"><span class="bar-label">ink</span><span class="bar-track"><span class="bar-fill" style="width:11.0%"></span></span><span class="bar-num">19,842 / 96</span></div>
+              <div class="bar-row"><span class="bar-label">hooks</span><span class="bar-track"><span class="bar-fill" style="width:10.6%"></span></span><span class="bar-num">19,204 / 104</span></div>
+              <div class="bar-row"><span class="bar-label">bridge</span><span class="bar-track"><span class="bar-fill" style="width:7.0%"></span></span><span class="bar-num">12,613 / 31</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>큰 파일 신호</h3>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>기준</th><th>파일</th><th>측정값</th><th>해석</th></tr></thead>
+                <tbody>
+                  <tr><td>bytes</td><td><span class="code">src/screens/REPL.tsx</span></td><td>900,855</td><td>대형 TUI 화면·인라인 소스맵 또는 변환 산출물 신호</td></tr>
+                  <tr><td>bytes</td><td><span class="code">src/main.tsx</span></td><td>808,607</td><td>CLI 초기화, 옵션, 정책, REPL 진입이 집중</td></tr>
+                  <tr><td>lines</td><td><span class="code">src/cli/print.ts</span></td><td>5,594</td><td>headless/print 모드 I/O와 SDK 메시지 변환 책임</td></tr>
+                  <tr><td>lines</td><td><span class="code">src/utils/messages.ts</span></td><td>5,512</td><td>메시지 모델·변환·호환 처리 중심 유틸</td></tr>
+                  <tr><td>lines</td><td><span class="code">src/utils/sessionStorage.ts</span></td><td>5,105</td><td>세션 JSONL 저장·복원·검색 책임</td></tr>
+                  <tr><td>lines</td><td><span class="code">src/query.ts</span></td><td>1,729</td><td>라인 수는 작지만 핵심 agent loop 파일</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="findings">
+        <div class="section-head">
+          <div>
+            <h2>핵심 발견</h2>
+            <p>조사 결과를 빠르게 판단할 수 있도록 주제별로 압축했다.</p>
+          </div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="핵심 발견 탭">
+          <button type="button" class="tab-button active" data-tab="tab-summary" role="tab" aria-selected="true">요약</button>
+          <button type="button" class="tab-button" data-tab="tab-runtime" role="tab" aria-selected="false">런타임</button>
+          <button type="button" class="tab-button" data-tab="tab-extension" role="tab" aria-selected="false">확장</button>
+          <button type="button" class="tab-button" data-tab="tab-controls" role="tab" aria-selected="false">제어면</button>
+        </div>
+        <div class="panel tab-panel active" id="tab-summary" role="tabpanel">
+          <div class="grid-3">
+            <article class="card">
+              <h3>기본 루프 위에 생산 기능을 겹친 구조</h3>
+              <p>README의 "Agent Pattern"과 <span class="code">src/query.ts</span>는 API 스트리밍, tool_use 감지, 도구 실행, tool_result 누적, 다음 턴 재호출이라는 반복 구조를 중심에 둔다.</p>
+            </article>
+            <article class="card">
+              <h3>UI와 headless 경로가 공존</h3>
+              <p><span class="code">main.tsx</span>는 Commander/Ink REPL 중심이고, <span class="code">QueryEngine.ts</span>는 SDK/headless 대화 생명주기를 맡는다.</p>
+            </article>
+            <article class="card">
+              <h3>추출 소스의 한계가 명확하다</h3>
+              <p>README는 108개 내부 모듈이 <span class="code">feature()</span> 게이트로 dead-code-eliminate되어 공개 패키지에 없다고 설명한다.</p>
+            </article>
+          </div>
+        </div>
+        <div class="panel tab-panel" id="tab-runtime" role="tabpanel">
+          <div class="timeline">
+            <div class="step"><div class="dot">1</div><div><strong>CLI fast-path</strong><span><span class="code">entrypoints/cli.tsx</span>는 버전 출력, Chrome MCP, bridge, daemon 같은 특수 경로를 동적 import로 분기한다.</span></div></div>
+            <div class="step"><div class="dot">2</div><div><strong>초기화와 컨텍스트 구성</strong><span><span class="code">main.tsx</span>는 설정, GrowthBook, 원격 관리 설정, MCP, 플러그인, 스킬, 정책 제한을 초기화한다.</span></div></div>
+            <div class="step"><div class="dot">3</div><div><strong>사용자 입력 처리</strong><span><span class="code">QueryEngine.submitMessage()</span>는 system prompt parts와 slash command 처리를 거쳐 메시지를 세션 로그에 먼저 기록한다.</span></div></div>
+            <div class="step"><div class="dot">4</div><div><strong>도구 실행과 재귀 턴</strong><span><span class="code">query.ts</span>는 스트리밍 중 도구 블록을 수집하고, <span class="code">StreamingToolExecutor</span> 또는 <span class="code">runTools</span>로 실행한 뒤 다음 루프로 돌아간다.</span></div></div>
+          </div>
+        </div>
+        <div class="panel tab-panel" id="tab-extension" role="tabpanel">
+          <div class="grid-2">
+            <article class="card">
+              <h3>Tools</h3>
+              <p><span class="code">Tool.ts</span>는 validate, permission, call, render, prompt 같은 수명주기를 타입으로 정의한다. <span class="code">tools.ts</span>는 Bash/File/Grep/Web/MCP/Agent/Task/Skill 계열 도구를 환경과 게이트에 따라 조립한다.</p>
+            </article>
+            <article class="card">
+              <h3>Commands, Skills, Plugins</h3>
+              <p><span class="code">commands.ts</span>는 내장 slash command와 동적 skill/plugin command를 합친다. <span class="code">src/skills</span>, <span class="code">src/plugins</span>, MCP client 계층은 모델이 사용할 기능 표면을 런타임에 확장한다.</p>
+            </article>
+            <article class="card">
+              <h3>Tasks and Agents</h3>
+              <p><span class="code">tasks.ts</span>는 LocalShell, LocalAgent, RemoteAgent, DreamTask를 기본 task로 등록하며 workflow/monitor task는 feature gate로 조건부 포함한다.</p>
+            </article>
+            <article class="card">
+              <h3>State</h3>
+              <p><span class="code">AppStateStore.ts</span>에는 권한 컨텍스트, MCP clients/tools/resources, plugin 상태, task 상태, bridge 상태, file history, attribution 등이 한 곳에 모인다.</p>
+            </article>
+          </div>
+        </div>
+        <div class="panel tab-panel" id="tab-controls" role="tabpanel">
+          <div class="grid-2">
+            <article class="card">
+              <span class="badge high">Telemetry</span>
+              <h3>1P 이벤트와 Datadog 이중 경로</h3>
+              <p>문서와 <span class="code">src/services/analytics/*</span>는 환경·프로세스·세션·도구 메타데이터를 이벤트로 다룬다. <span class="code">OTEL_LOG_TOOL_DETAILS</span>는 상세 도구명/입력 로깅 범위를 바꿀 수 있는 민감한 환경 변수다.</p>
+            </article>
+            <article class="card">
+              <span class="badge high">Remote</span>
+              <h3>원격 관리 설정과 킬스위치</h3>
+              <p><span class="code">remoteManagedSettings/index.ts</span>는 원격 설정 엔드포인트와 1시간 폴링을 정의한다. 위험 설정 변경을 거부하면 <span class="code">securityCheck.tsx</span>에서 종료 흐름으로 이어진다.</p>
+            </article>
+            <article class="card">
+              <span class="badge medium">Internal</span>
+              <h3>내부 사용자 분기</h3>
+              <p><span class="code">USER_TYPE === 'ant'</span> 조건과 <span class="code">feature()</span> 게이트가 내부 도구, hidden command, 모델 코드네임 보호, undercover mode를 분리한다.</p>
+            </article>
+            <article class="card">
+              <span class="badge medium">Roadmap</span>
+              <h3>KAIROS, voice, browser, workflow 흔적</h3>
+              <p><span class="code">docs/ko/05-향후-로드맵.md</span>는 KAIROS 자율 모드, 음성 모드, WebBrowserTool, WorkflowTool, Buddy, DreamTask를 미공개·게이트된 방향성으로 정리한다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="risks">
+        <div class="section-head">
+          <div>
+            <h2>리스크와 작업 권고</h2>
+            <p>필터로 우선순위를 줄여 볼 수 있다.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="risk-tools" aria-label="리스크 필터">
+            <button type="button" class="risk-filter active" data-filter="all">전체</button>
+            <button type="button" class="risk-filter" data-filter="high">높음</button>
+            <button type="button" class="risk-filter" data-filter="medium">중간</button>
+            <button type="button" class="risk-filter" data-filter="low">낮음</button>
+          </div>
+          <div class="risk-list">
+            <article class="risk-card" data-risk="high">
+              <span class="badge high">높음</span>
+              <h3>불완전한 소스 기반</h3>
+              <p>README 기준 108개 모듈이 공개 패키지에 없고 <span class="code">feature()</span>로 제거된다. 보안·제품 판단을 할 때 "있는 코드"와 "게이트 뒤에 있었을 코드"를 분리해야 한다.</p>
+            </article>
+            <article class="risk-card" data-risk="high">
+              <span class="badge high">높음</span>
+              <h3>빌드 스크립트의 워크트리 변형</h3>
+              <p><span class="code">npm run check</span>와 <span class="code">npm run build</span>는 <span class="code">prepare-src</span>를 거치며 <span class="code">src/</span> 패치를 수행할 수 있다. 검증 전 별도 worktree 또는 clean snapshot이 필요하다.</p>
+            </article>
+            <article class="risk-card" data-risk="high">
+              <span class="badge high">높음</span>
+              <h3>원격 설정 수락 모델</h3>
+              <p>위험 설정 변경 시 인터랙티브 다이얼로그가 뜨고 거부하면 종료한다. 운영 정책 관점에서는 사용자 선택권, 감사 로그, 사전 공지의 요구 수준을 별도로 검토해야 한다.</p>
+            </article>
+            <article class="risk-card" data-risk="medium">
+              <span class="badge medium">중간</span>
+              <h3>텔레메트리 표면</h3>
+              <p>도구 입력은 기본 truncation이 있으나 이벤트 메타데이터 범위가 넓고 상세 로깅 환경 변수가 있다. 재배포·연구 실행 시 네트워크 차단과 환경 변수 점검이 필요하다.</p>
+            </article>
+            <article class="risk-card" data-risk="medium">
+              <span class="badge medium">중간</span>
+              <h3>React compiler/runtime 산출물 혼재</h3>
+              <p>일부 소스는 <span class="code">react/compiler-runtime</span> import와 인라인 source map을 포함한다. 사람이 편집하는 원본이라기보다 번들 추출·역변환 산출물로 봐야 한다.</p>
+            </article>
+            <article class="risk-card" data-risk="low">
+              <span class="badge low">낮음</span>
+              <h3>문서 통계와 현재 측정값 차이</h3>
+              <p>README의 "largest single file query.ts" 같은 설명은 현재 워크트리 bytes 측정과 다르다. 산출물·보고서에는 측정 시점과 명령 기준을 함께 표기하는 편이 안전하다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="sources">
+        <div class="section-head">
+          <div>
+            <h2>소스 근거표</h2>
+            <p>주요 주장에 사용한 파일과 확인 내용을 정리했다.</p>
+          </div>
+          <input class="source-search" type="search" id="sourceSearch" aria-label="소스 근거 검색">
+        </div>
+        <div class="table-scroll">
+          <table id="sourceTable">
+            <thead>
+              <tr>
+                <th>영역</th>
+                <th>소스</th>
+                <th>확인한 내용</th>
+                <th>판단</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>프로젝트 정체성</td>
+                <td><span class="code">package.json</span>, <span class="code">README.md</span></td>
+                <td>패키지명, 버전 2.1.88, 연구용 디컴파일 소스 설명, 저작권/상업적 사용 금지 고지</td>
+                <td>분석 대상은 제품 원본 저장소가 아니라 공개 npm 산출물 기반 연구 저장소</td>
+              </tr>
+              <tr>
+                <td>빌드</td>
+                <td><span class="code">scripts/build.mjs</span>, <span class="code">scripts/prepare-src.mjs</span></td>
+                <td>Bun compile-time intrinsic, macro, missing module stub, esbuild bundle 전략</td>
+                <td>현실적인 빌드는 변환·스텁 의존이며 clean source 검증과 분리 필요</td>
+              </tr>
+              <tr>
+                <td>진입점</td>
+                <td><span class="code">src/entrypoints/cli.tsx</span></td>
+                <td>버전 출력, Chrome MCP, bridge, daemon, background session 등 fast-path를 동적 import로 처리</td>
+                <td>시작 성능과 feature-gated 경로가 강하게 의식된 bootstrap</td>
+              </tr>
+              <tr>
+                <td>인터랙티브 앱</td>
+                <td><span class="code">src/main.tsx</span></td>
+                <td>Commander CLI, 설정, 정책, GrowthBook, MCP, plugin/skill, REPL 진입이 집중</td>
+                <td>가장 넓은 오케스트레이션 표면이며 변경 영향 범위가 큼</td>
+              </tr>
+              <tr>
+                <td>SDK/headless</td>
+                <td><span class="code">src/QueryEngine.ts</span></td>
+                <td>system prompt 조립, slash command 처리, transcript 선기록, query generator 연결</td>
+                <td>REPL 밖에서 같은 agent loop를 소비하는 핵심 클래스</td>
+              </tr>
+              <tr>
+                <td>Agent loop</td>
+                <td><span class="code">src/query.ts</span></td>
+                <td>while loop, auto-compact, streaming API, tool_use 수집, 도구 결과 후 다음 턴 재호출</td>
+                <td>제품형 하니스의 중심 루프</td>
+              </tr>
+              <tr>
+                <td>도구</td>
+                <td><span class="code">src/Tool.ts</span>, <span class="code">src/tools.ts</span></td>
+                <td>Tool lifecycle 타입과 환경/권한/feature gate 기반 tool registry</td>
+                <td>도구 추가·차단·노출의 단일 진입점 역할</td>
+              </tr>
+              <tr>
+                <td>도구 실행</td>
+                <td><span class="code">src/services/tools/StreamingToolExecutor.ts</span></td>
+                <td>concurrency-safe 도구 병렬 실행, exclusive 도구 단독 실행, 결과 순서 보존</td>
+                <td>성능 최적화와 side-effect 안전성을 동시에 다루는 모듈</td>
+              </tr>
+              <tr>
+                <td>상태</td>
+                <td><span class="code">src/state/AppStateStore.ts</span></td>
+                <td>권한, MCP, plugins, tasks, bridge, attribution, file history 등 세션 상태 정의</td>
+                <td>UI와 실행 계층 사이의 공유 상태 중심</td>
+              </tr>
+              <tr>
+                <td>원격 설정</td>
+                <td><span class="code">src/services/remoteManagedSettings/index.ts</span>, <span class="code">securityCheck.tsx</span></td>
+                <td>설정 엔드포인트, 10초 timeout, 5회 retry, 1시간 polling, 위험 설정 거부 시 종료</td>
+                <td>정책/보안 통제면이 강하고 운영 감사 대상</td>
+              </tr>
+              <tr>
+                <td>텔레메트리</td>
+                <td><span class="code">src/services/analytics/metadata.ts</span>, <span class="code">firstPartyEventLogger.ts</span>, docs/ko/01</td>
+                <td>환경·프로세스·세션 메타데이터, 도구 입력 truncation, 1P logging enabled 조건</td>
+                <td>프라이버시 검토 시 이벤트 스키마와 환경 변수 정책 확인 필요</td>
+              </tr>
+              <tr>
+                <td>내부 모드</td>
+                <td><span class="code">src/utils/undercover.ts</span>, docs/ko/03</td>
+                <td>Anthropic 내부 사용자 조건, 공개 저장소에서 attribution/codename 노출 방지 지시</td>
+                <td>외부 빌드에서는 DCE되지만 공개 기여 투명성 관점의 분석 대상</td>
+              </tr>
+              <tr>
+                <td>로드맵 단서</td>
+                <td><span class="code">docs/ko/05-향후-로드맵.md</span>, <span class="code">src/tools.ts</span></td>
+                <td>KAIROS, voice, WebBrowserTool, WorkflowTool, DreamTask, Buddy 등 feature-gated 흔적</td>
+                <td>현재 제품 표면과 내부/미래 기능 표면을 분리해 추적해야 함</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <div class="panel">
+          <h2>권장 다음 작업</h2>
+          <div class="grid-3">
+            <article class="card">
+              <h3>1. 빌드 검증은 별도 worktree에서</h3>
+              <p><span class="code">prepare-src</span>가 소스를 직접 고칠 수 있으므로 현재 분석 기준을 보존한 뒤 실행한다.</p>
+            </article>
+            <article class="card">
+              <h3>2. 제어면을 별도 감사 대상으로 분리</h3>
+              <p>remote settings, GrowthBook, telemetry, permission mode, policy limits는 별도 threat model 문서로 쪼개는 편이 좋다.</p>
+            </article>
+            <article class="card">
+              <h3>3. 변경 작업은 모듈 경계 단위로</h3>
+              <p>도구 변경은 <span class="code">Tool.ts/tools.ts/services/tools</span>, CLI 변경은 <span class="code">main.tsx/commands.ts</span>, 상태 변경은 <span class="code">AppStateStore</span>부터 추적한다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <p class="footer">
+        생성 기준: 로컬 워크트리 <span class="code">/home/roqkf/claude-code-source-code</span>, branch <span class="code">main</span>, 최근 커밋 <span class="code">2ca5dda 2026-04-01</span>.
+        이 HTML은 외부 자산 없이 열리는 단일 파일이다.
+      </p>
+    </main>
+  </div>
+
+  <script>
+    const summaryText = [
+      'Claude Code v2.1.88 source artifact summary',
+      '- Repo is a decompiled/unbundled research source for @anthropic-ai/claude-code, not the original internal monorepo.',
+      '- Current src metrics: 1,884 TS/TSX files and 512,664 lines; largest responsibility areas are utils, components, services, tools, and commands.',
+      '- Runtime path: entrypoints/cli.tsx -> main.tsx / QueryEngine.ts -> query.ts -> StreamingToolExecutor + Tool registry.',
+      '- High-risk review areas: incomplete feature-gated modules, build scripts that may mutate src, remote managed settings, telemetry, and internal-only gates.',
+      '- Best next step: isolate build checks in a clean worktree and review control-plane modules separately.'
+    ].join('\\n');
+
+    document.getElementById('copySummary').addEventListener('click', async () => {
+      const state = document.getElementById('copyState');
+      try {
+        await navigator.clipboard.writeText(summaryText);
+        state.textContent = '복사됨';
+      } catch {
+        state.textContent = '클립보드 접근 실패';
+      }
+      window.setTimeout(() => { state.textContent = ''; }, 2200);
+    });
+
+    document.querySelectorAll('.tab-button').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.tab-button').forEach((b) => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.remove('active'));
+        button.classList.add('active');
+        button.setAttribute('aria-selected', 'true');
+        document.getElementById(button.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.risk-filter').forEach((button) => {
+      button.addEventListener('click', () => {
+        const filter = button.dataset.filter;
+        document.querySelectorAll('.risk-filter').forEach((b) => b.classList.remove('active'));
+        button.classList.add('active');
+        document.querySelectorAll('.risk-card').forEach((card) => {
+          card.hidden = filter !== 'all' && card.dataset.risk !== filter;
+        });
+      });
+    });
+
+    document.getElementById('sourceSearch').addEventListener('input', (event) => {
+      const needle = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('#sourceTable tbody tr').forEach((row) => {
+        row.hidden = needle.length > 0 && !row.textContent.toLowerCase().includes(needle);
+      });
+    });
+  </script>
+</body>
+</html>
