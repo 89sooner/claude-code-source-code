@@ -1,0 +1,458 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1782799595597,
+  "projectRoot": "/home/roqkf/claude-code-source-code",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=18.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "esbuild",
+        "version": "0.27.4",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 18.0.0"
+  },
+  "build": {
+    "buildCommand": "cd /home/roqkf/claude-code-source-code\ngit commit -m \"Add Claude Code v2.1.88 source analysis + reference pattern pack\" -m \"Deep multi-agent analysis of the extracted Claude Code v2.1.88 source, plus a\ncompilable, adversarially-reviewed TypeScript reference pack distilling 14\nharness patterns for porting into a TS/Node orchestration agent.\n\n- artifacts/claude-code-analysis-report.md: 15-subsystem analysis + prioritized borrow-list\n- artifacts/claude-code-analysis.html: interactive analysis artifact\n- artifacts/project-analysis-claude-code-source.html: earlier analysis artifact\n- artifacts/ref/: 25-file self-contained reference pack (21 modules across agent\n  loop, sub-agent orchestration, context survival, permission engine,\n  extensibility, lifecycle hooks) with README/INDEX/manifest. Strict tsc clean,\n  behavioral smoke tested; all 5 authoring batches passed an adversarial\n  faithfulness review.\" -m \"Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>\"\necho \"=== commit result ===\" && git log --oneline -1 && echo \"\" && git show --stat --oneline HEAD | tail -8",
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run start",
+    "scripts": {
+      "prepare-src": "node scripts/prepare-src.mjs",
+      "build": "npm run prepare-src && node scripts/build.mjs",
+      "check": "npm run prepare-src && tsc --noEmit",
+      "start": "node dist/cli.js"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase/PascalCase",
+    "importStyle": "ES modules",
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "artifacts": {
+      "path": "artifacts",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1782799595585,
+      "keyFiles": [
+        "project-analysis-claude-code-source.html"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1782799595586,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 4,
+      "lastAccessed": 1782799595591,
+      "keyFiles": [
+        "build.mjs",
+        "prepare-src.mjs",
+        "stub-modules.mjs",
+        "transform.mjs"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 18,
+      "lastAccessed": 1782799595593,
+      "keyFiles": [
+        "QueryEngine.ts",
+        "Task.ts",
+        "Tool.ts",
+        "commands.ts",
+        "context.ts"
+      ]
+    },
+    "stubs": {
+      "path": "stubs",
+      "purpose": "Stub implementations",
+      "fileCount": 4,
+      "lastAccessed": 1782799595593,
+      "keyFiles": [
+        "bun-bundle.ts",
+        "global.d.ts",
+        "macros.d.ts",
+        "macros.ts"
+      ]
+    },
+    "tools": {
+      "path": "tools",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1782799595594,
+      "keyFiles": []
+    },
+    "types": {
+      "path": "types",
+      "purpose": "Type definitions",
+      "fileCount": 1,
+      "lastAccessed": 1782799595594,
+      "keyFiles": [
+        "connectorText.js"
+      ]
+    },
+    "utils": {
+      "path": "utils",
+      "purpose": "Utility functions",
+      "fileCount": 3,
+      "lastAccessed": 1782799595594,
+      "keyFiles": [
+        "attributionHooks.js",
+        "systemThemeWatcher.js",
+        "udsClient.js"
+      ]
+    },
+    "vendor": {
+      "path": "vendor",
+      "purpose": "Third-party code",
+      "fileCount": 0,
+      "lastAccessed": 1782799595594,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/utils/hooks.ts",
+      "accessCount": 56,
+      "lastAccessed": 1782872754021,
+      "type": "file"
+    },
+    {
+      "path": "src/query.ts",
+      "accessCount": 25,
+      "lastAccessed": 1782820859421,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/AgentTool/runAgent.ts",
+      "accessCount": 9,
+      "lastAccessed": 1782871734945,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/attachments.ts",
+      "accessCount": 8,
+      "lastAccessed": 1782801380415,
+      "type": "file"
+    },
+    {
+      "path": "src/Tool.ts",
+      "accessCount": 8,
+      "lastAccessed": 1782807793675,
+      "type": "file"
+    },
+    {
+      "path": "src/services/compact/compact.ts",
+      "accessCount": 7,
+      "lastAccessed": 1782820899149,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/SkillTool/SkillTool.ts",
+      "accessCount": 7,
+      "lastAccessed": 1782868111921,
+      "type": "file"
+    },
+    {
+      "path": "src/commands.ts",
+      "accessCount": 6,
+      "lastAccessed": 1782867981781,
+      "type": "file"
+    },
+    {
+      "path": "src/types/hooks.ts",
+      "accessCount": 5,
+      "lastAccessed": 1782872483127,
+      "type": "file"
+    },
+    {
+      "path": "src/constants/prompts.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782800124850,
+      "type": "file"
+    },
+    {
+      "path": "src/services/tools/StreamingToolExecutor.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782807893572,
+      "type": "file"
+    },
+    {
+      "path": "src/services/compact/autoCompact.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782820823508,
+      "type": "file"
+    },
+    {
+      "path": "src/services/compact/microCompact.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782820990984,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/permissions/permissions.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782860644613,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/SkillTool/prompt.ts",
+      "accessCount": 4,
+      "lastAccessed": 1782867967217,
+      "type": "file"
+    },
+    {
+      "path": "src/services/tools/toolOrchestration.ts",
+      "accessCount": 3,
+      "lastAccessed": 1782807546425,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/tokens.ts",
+      "accessCount": 3,
+      "lastAccessed": 1782820823958,
+      "type": "file"
+    },
+    {
+      "path": "src/services/compact/prompt.ts",
+      "accessCount": 3,
+      "lastAccessed": 1782820860777,
+      "type": "file"
+    },
+    {
+      "path": "src/types/permissions.ts",
+      "accessCount": 3,
+      "lastAccessed": 1782860645100,
+      "type": "file"
+    },
+    {
+      "path": "src/types/command.ts",
+      "accessCount": 3,
+      "lastAccessed": 1782867966889,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/argumentSubstitution.ts",
+      "accessCount": 3,
+      "lastAccessed": 1782868382260,
+      "type": "file"
+    },
+    {
+      "path": "src/Task.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800012849,
+      "type": "file"
+    },
+    {
+      "path": "src/skills/loadSkillsDir.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800043200,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/BashTool/bashPermissions.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800098734,
+      "type": "file"
+    },
+    {
+      "path": "src/history.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800355235,
+      "type": "file"
+    },
+    {
+      "path": "src/context.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800369206,
+      "type": "file"
+    },
+    {
+      "path": "src/tools.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800380986,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/AgentTool/forkSubagent.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800396383,
+      "type": "file"
+    },
+    {
+      "path": "src/QueryEngine.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782800457677,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/forkedAgent.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782808081212,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/permissions/PermissionResult.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782860026588,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/permissions/PermissionRule.ts",
+      "accessCount": 2,
+      "lastAccessed": 1782860026660,
+      "type": "file"
+    },
+    {
+      "path": "src/constants/system.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800004775,
+      "type": "file"
+    },
+    {
+      "path": "src/constants/systemPromptSections.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800004936,
+      "type": "file"
+    },
+    {
+      "path": "src/services/mcp/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800007772,
+      "type": "file"
+    },
+    {
+      "path": "src/plugins/builtinPlugins.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800007946,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/MCPTool/MCPTool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800008045,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/SkillTool/constants.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800008780,
+      "type": "file"
+    },
+    {
+      "path": "src/skills/bundledSkills.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800016193,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/AgentTool/builtInAgents.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800016301,
+      "type": "file"
+    },
+    {
+      "path": "src/skills/mcpSkillBuilders.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800016610,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/permissions/PermissionMode.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800018165,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/permissions/permissionRuleParser.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800018699,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/permissions/getNextPermissionMode.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800019197,
+      "type": "file"
+    },
+    {
+      "path": "src/query/deps.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800023240,
+      "type": "file"
+    },
+    {
+      "path": "src/query/config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800023758,
+      "type": "file"
+    },
+    {
+      "path": "src/query/tokenBudget.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800023935,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/BashTool/shouldUseSandbox.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800028982,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/FileWriteTool/FileWriteTool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800036829,
+      "type": "file"
+    },
+    {
+      "path": "src/services/mcp/mcpStringUtils.ts",
+      "accessCount": 1,
+      "lastAccessed": 1782800038206,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

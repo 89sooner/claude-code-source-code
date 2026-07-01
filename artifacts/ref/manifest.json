@@ -1,0 +1,200 @@
+{
+  "name": "claude-code-pattern-refs",
+  "version": "1.0.0",
+  "purpose": "Self-contained, compilable TypeScript reference implementations of the highest-value Claude Code v2.1.88 agent patterns, annotated for AI agents to read, verify, and port.",
+  "sourceProvenance": "@anthropic-ai/claude-code v2.1.88 (extracted, unbundled src/)",
+  "audience": "AI coding agents porting patterns into a TS/Node general orchestration agent",
+  "readme": "README.md",
+  "index": "INDEX.md",
+  "nature": "Idealized distillation, NOT a copy. Faithful in structure/invariants; cites source file:line. Provider-agnostic (no Anthropic SDK dependency).",
+  "verified": {
+    "typecheck": "tsc --noEmit -p tsconfig.json (strict) => 0 errors",
+    "runtime": "behavioral smoke test passed: #4 parallel batch (maxConcurrent=3), #5 N-in/N-out pairing on throw/unknown/abort, #12 isolation + no-leak + permission non-inheritance, #1/#2 loop returns Terminal 'completed', M1 reduceContext persists; #9 microcompact frees tokens + usage gauge over-threshold + circuit breaker stops after 3 failures, #10 summarize + live-state reinjection (plan/todos); #8 deny>ask>allow ordering (deny beats bypass mode, ask fail-closed to deny headless), #14 compound-command guard (incl. & background split) + asymmetric env-var normalization + dangerous allow-prefix stripping + nested-exec bypass-immune ask + Bash content-ask beats bypass mode; F1 skill catalog budget (1%/250-char cap/bundled-never-truncated/names-only fallback), F4 layered cwd-memoized registry (precedence first-wins, gates re-run each getCommands) + /x and Skill('x') converge on one expansion path; G1 lifecycle hooks — trust gate (untrusted interactive => skip, non-interactive => run), matcher+if two-stage selection, command exit-code protocol (0/2/other), deny>ask>allow merge, PreToolUse block/rewrite/context, hook allow defers to rules (no escalation)"
+  },
+  "tagVocabulary": {
+    "@module": "stable module id used in cross-references",
+    "@patterns": "borrow-list pattern ids implemented in this file (e.g. #1, #5, #12, D3)",
+    "@intent": "one-line purpose",
+    "@source": "Claude Code file:line provenance this code mirrors",
+    "@depends": "intra-pack module dependencies",
+    "@invariant": "guarantees the implementation upholds",
+    "@porting": "how to adapt outside Claude Code (provider swap, framework, strictness)",
+    "@gotcha": "failure modes to avoid"
+  },
+  "readingOrder": [
+    "types.ts",
+    "tool.ts",
+    "model-client.ts",
+    "tool-runner.ts",
+    "agent-loop.ts",
+    "subagent.ts",
+    "task-notification.ts",
+    "context-usage.ts",
+    "live-state.ts",
+    "compaction.ts",
+    "permission-types.ts",
+    "permission-engine.ts",
+    "bash-permission.ts",
+    "command-types.ts",
+    "skill-catalog.ts",
+    "command-registry.ts",
+    "command-invoke.ts",
+    "hook-types.ts",
+    "hook-engine.ts",
+    "hook-integration.ts",
+    "example.ts"
+  ],
+  "patterns": [
+    {
+      "id": "#1",
+      "title": "async-generator turn loop + tagged Terminal/Continue union",
+      "files": ["agent-loop.ts", "types.ts"],
+      "exports": ["agentLoop", "Terminal", "Continue"],
+      "source": ["query.ts:241-307", "query.ts:204-217", "query.ts:1357", "query.ts:1715-1727"],
+      "difficulty": "mid",
+      "roi": "highest",
+      "orchestration": true
+    },
+    {
+      "id": "#2",
+      "title": "tool_use observation as the continue signal (do not trust stop_reason)",
+      "files": ["agent-loop.ts", "model-client.ts"],
+      "exports": ["agentLoop", "ModelClient"],
+      "source": ["query.ts:558", "query.ts:834", "claude.ts:2242-2248"],
+      "difficulty": "low",
+      "orchestration": true
+    },
+    {
+      "id": "#5",
+      "title": "every tool_use gets exactly one tool_result (incl. abort)",
+      "files": ["tool-runner.ts"],
+      "exports": ["runTools", "syntheticErrorResults"],
+      "source": ["query.ts:123-149"],
+      "difficulty": "low",
+      "orchestration": true
+    },
+    {
+      "id": "#4",
+      "title": "read-only vs mutating concurrency batching",
+      "files": ["tool-runner.ts", "tool.ts"],
+      "exports": ["runTools", "CONCURRENCY_CAP"],
+      "source": ["toolOrchestration.ts:10", "toolOrchestration.ts:91-116"],
+      "difficulty": "mid",
+      "orchestration": true
+    },
+    {
+      "id": "#7",
+      "title": "fail-closed Tool contract + buildTool defaults",
+      "files": ["tool.ts"],
+      "exports": ["buildTool", "Tool", "CanUseTool"],
+      "source": ["Tool.ts:362-695", "Tool.ts:757-792"],
+      "difficulty": "low",
+      "orchestration": false
+    },
+    {
+      "id": "#12",
+      "title": "default-deny sub-agent context isolation",
+      "files": ["subagent.ts"],
+      "exports": ["createSubagentContext", "spawnSubagent"],
+      "source": ["forkedAgent.ts:345-462", "runAgent.ts:465-479", "runAgent.ts:520-528", "runAgent.ts:292-300"],
+      "difficulty": "mid",
+      "orchestration": true
+    },
+    {
+      "id": "D3",
+      "title": "dual result channel: inline return vs <task-notification> injection",
+      "files": ["task-notification.ts", "subagent.ts"],
+      "exports": ["finalizeAgentResult", "enqueueAgentNotification", "buildTaskNotification"],
+      "source": ["agentToolUtils.ts:276-317", "LocalAgentTask.tsx:197-262"],
+      "difficulty": "mid",
+      "orchestration": true
+    },
+    {
+      "id": "#9",
+      "title": "tiered cheap->expensive context reduction + usage-based gauge + circuit breaker",
+      "files": ["compaction.ts", "context-usage.ts"],
+      "exports": ["makeReduceContext", "microcompact", "contextTokensFromUsage", "autoCompactThreshold", "MAX_CONSECUTIVE_FAILURES"],
+      "source": ["query.ts:379-465", "autoCompact.ts:28-91", "tokens.ts:226", "microCompact.ts:253-293"],
+      "difficulty": "mid",
+      "orchestration": true
+    },
+    {
+      "id": "#10",
+      "title": "compaction = narrative summary + structured live-state reinjection",
+      "files": ["compaction.ts", "live-state.ts"],
+      "exports": ["summarizeAndReinject", "buildCompactPrompt", "COMPACT_PROMPT_SECTIONS", "LiveStateStore"],
+      "source": ["compact/prompt.ts:19-129", "compact.ts:1415", "compact.ts:1470", "compact.ts:1494"],
+      "difficulty": "high",
+      "orchestration": true
+    },
+    {
+      "id": "#8",
+      "title": "deny>ask>allow by evaluation order; bypass is leaky (explicit deny + safety asks beat bypass)",
+      "files": ["permission-engine.ts", "permission-types.ts"],
+      "exports": ["evaluatePermission", "makeCanUseTool", "ToolPermissionChecker"],
+      "source": ["permissions.ts:1158-1310", "types/permissions.ts:251-324"],
+      "difficulty": "mid",
+      "orchestration": false
+    },
+    {
+      "id": "#14",
+      "title": "bash anti-bypass: rule DSL + compound-command guard + asymmetric normalization + dangerous allow-prefix stripping",
+      "files": ["bash-permission.ts"],
+      "exports": ["checkBashPermission", "matchPattern", "normalizeForDeny", "normalizeForAllow", "splitCompound", "SAFE_ENV_VARS"],
+      "source": ["shellRuleMatching.ts:43-184", "dangerousPatterns.ts:18-80", "types/permissions.ts:280-283"],
+      "difficulty": "high",
+      "orchestration": false
+    },
+    {
+      "id": "#F1",
+      "title": "2-stage progressive disclosure: budgeted skill catalog (L1) + load-on-invoke (L2)",
+      "files": ["skill-catalog.ts", "command-invoke.ts"],
+      "exports": ["formatCommandsWithinBudget", "getCharBudget", "skillCatalogReminder", "SKILL_BUDGET_CONTEXT_PERCENT", "MAX_LISTING_DESC_CHARS"],
+      "source": ["tools/SkillTool/prompt.ts:20-171", "tools/SkillTool/prompt.ts:188-194"],
+      "difficulty": "mid",
+      "orchestration": true
+    },
+    {
+      "id": "#F4",
+      "title": "unified command model: skill = slash command = plugin; layered cwd-memoized registry; /x == Skill('x')",
+      "files": ["command-types.ts", "command-registry.ts", "command-invoke.ts"],
+      "exports": ["Command", "makeCommandRegistry", "expandCommand", "runSlashCommand", "runSkillTool", "markdownSkill"],
+      "source": ["types/command.ts:169-216", "commands.ts:258-346", "commands.ts:449-509"],
+      "difficulty": "mid",
+      "orchestration": true
+    },
+    {
+      "id": "#G1",
+      "title": "out-of-process lifecycle hooks: trust gate + matcher/if selection + exit-code protocol + deny>ask>allow merge + PreToolUse/PostToolUse integration",
+      "files": ["hook-types.ts", "hook-engine.ts", "hook-integration.ts"],
+      "exports": ["HOOK_EVENTS", "HooksSettings", "shouldSkipHookDueToTrust", "selectHooks", "mergeResults", "runHooks", "runPreToolUseHooks", "withPreToolUseHooks"],
+      "source": ["utils/hooks.ts:286-296", "utils/hooks.ts:2820", "types/hooks.ts:260-277", "services/tools/toolHooks.ts:332-435"],
+      "difficulty": "high",
+      "orchestration": true
+    }
+  ],
+  "modules": [
+    { "file": "types.ts", "exports": ["TextBlock", "ThinkingBlock", "ContentBlock", "ToolUseBlock", "ToolResultBlock", "AssistantMessage", "UserMessage", "Message", "StopReason", "Usage", "Terminal", "TerminalReason", "Continue", "ContinueReason", "isToolUse", "isText", "metaUser"], "depends": [] },
+    { "file": "tool.ts", "exports": ["ToolSchema", "ToolContext", "Validated", "Tool", "ToolDef", "buildTool", "PermissionDecision", "CanUseTool", "toolResult"], "depends": ["types.ts"] },
+    { "file": "model-client.ts", "exports": ["StreamResult", "StreamParams", "ModelClient"], "depends": ["types.ts", "tool.ts"] },
+    { "file": "tool-runner.ts", "exports": ["CONCURRENCY_CAP", "syntheticErrorResults", "toolResultsMessage", "runTools"], "depends": ["types.ts", "tool.ts"] },
+    { "file": "agent-loop.ts", "exports": ["AgentLoopParams", "agentLoop"], "depends": ["types.ts", "model-client.ts", "tool.ts", "tool-runner.ts"] },
+    { "file": "subagent.ts", "exports": ["AppCallbacks", "AllowRules", "ParentContext", "SubagentSpawnOptions", "SubagentContext", "createSubagentContext", "SpawnResult", "spawnSubagent"], "depends": ["types.ts", "tool.ts", "agent-loop.ts", "model-client.ts", "task-notification.ts"] },
+    { "file": "task-notification.ts", "exports": ["finalizeAgentResult", "TaskNotificationState", "NotificationStatus", "MessageQueue", "NotificationArgs", "buildTaskNotification", "enqueueAgentNotification"], "depends": ["types.ts"] },
+    { "file": "context-usage.ts", "exports": ["RESERVED_OUTPUT_TOKENS", "AUTOCOMPACT_BUFFER_TOKENS", "MAX_CONSECUTIVE_FAILURES", "CompactTracking", "effectiveContextWindow", "autoCompactThreshold", "tokenCountFromUsage", "roughTokenEstimate", "contextTokensFromUsage", "isOverThreshold"], "depends": ["types.ts"] },
+    { "file": "live-state.ts", "exports": ["TodoStatus", "Todo", "ReadFileEntry", "InvokedSkill", "LiveStateStore", "renderTodos"], "depends": [] },
+    { "file": "compaction.ts", "exports": ["KEEP_RECENT_TURNS_DEFAULT", "MicrocompactResult", "microcompact", "Summarize", "ReadFile", "COMPACT_PROMPT_SECTIONS", "buildCompactPrompt", "POST_COMPACT_MAX_FILES", "POST_COMPACT_TOKEN_BUDGET", "POST_COMPACT_MAX_TOKENS_PER_FILE", "ReinjectOptions", "summarizeAndReinject", "ReduceContextOptions", "makeReduceContext"], "depends": ["types.ts", "context-usage.ts", "live-state.ts"] },
+    { "file": "permission-types.ts", "exports": ["PermissionBehavior", "PermissionRuleSource", "PermissionMode", "PermissionRuleValue", "PermissionRule", "PermissionDecisionReason", "AllowDecision", "AskDecision", "DenyDecision", "PermissionDecisionFull", "PermissionResult", "RuleString", "RulesBySource", "ToolPermissionContext", "parseRuleString", "iterRules"], "depends": [] },
+    { "file": "permission-engine.ts", "exports": ["ToolPermissionChecker", "PermissionEngineTool", "evaluatePermission", "PermissionPrompt", "CanUseToolConfig", "makeCanUseTool"], "depends": ["permission-types.ts", "tool.ts"] },
+    { "file": "bash-permission.ts", "exports": ["SAFE_ENV_VARS", "matchPattern", "splitCompound", "normalizeForDeny", "normalizeForAllow", "checkBashPermission"], "depends": ["permission-types.ts", "permission-engine.ts"] },
+    { "file": "command-types.ts", "exports": ["CommandSource", "CommandAvailability", "CommandBase", "ExpandContext", "Command", "PromptCommand", "getCommandName", "isCommandEnabled", "meetsAvailability"], "depends": [] },
+    { "file": "skill-catalog.ts", "exports": ["SKILL_BUDGET_CONTEXT_PERCENT", "CHARS_PER_TOKEN", "DEFAULT_CHAR_BUDGET", "MAX_LISTING_DESC_CHARS", "getCharBudget", "formatCommandsWithinBudget", "skillCatalogReminder"], "depends": ["command-types.ts", "types.ts"] },
+    { "file": "command-registry.ts", "exports": ["CommandSources", "CommandRegistry", "makeCommandRegistry"], "depends": ["command-types.ts"] },
+    { "file": "command-invoke.ts", "exports": ["substituteArgs", "markdownSkill", "ExpandResult", "expandCommand", "runSlashCommand", "runSkillTool"], "depends": ["command-types.ts", "command-registry.ts"] },
+    { "file": "hook-types.ts", "exports": ["HOOK_EVENTS", "HookEvent", "TOOL_HOOK_EVENTS", "isToolHookEvent", "CommandHook", "PromptHook", "AgentHook", "HttpHook", "HookCommand", "HookMatcher", "HooksSettings", "BaseHookInput", "ToolHookInput", "HookInput", "HookPermissionDecision", "HookSpecificOutput", "SyncHookJSONOutput", "AsyncHookJSONOutput", "HookJSONOutput", "isAsyncHookJSONOutput", "HookOutcome", "HookPermissionBehavior", "HookResult", "AggregatedHookResult", "emptyAggregate"], "depends": [] },
+    { "file": "hook-engine.ts", "exports": ["TrustGate", "shouldSkipHookDueToTrust", "matcherMatches", "IfMatchTarget", "defaultIfTarget", "ifMatches", "selectHooks", "HookRunners", "mergeResults", "runHooks"], "depends": ["hook-types.ts", "permission-types.ts", "bash-permission.ts"] },
+    { "file": "hook-integration.ts", "exports": ["PreToolUseOutcome", "HookDeps", "runPreToolUseHooks", "runPostToolUseHooks", "withPreToolUseHooks"], "depends": ["hook-types.ts", "hook-engine.ts", "tool.ts"] },
+    { "file": "example.ts", "exports": ["main", "permissionDemo", "commandSystemDemo", "hookSystemDemo"], "depends": ["ALL"] }
+  ],
+  "verify": "cd artifacts/ref && tsc --noEmit -p tsconfig.json"
+}
